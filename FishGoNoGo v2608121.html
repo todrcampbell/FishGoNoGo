@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/61448/Downloads/FishGoNoGo_11Aug_20.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="color-scheme" content="dark">
+<title>FishGoNoGo – Moreton Bay Forecast</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0d1117;
+    color: #eee;
+    margin: 0;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 28px));
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: contain;
+  }
+  .main { max-width: 1400px; margin: auto; }
+  h1 { margin: 0 0 6px 0; font-size: 1.45rem; }
+  .subtitle { color: #9ca3af; margin-bottom: 16px; font-size: 0.9rem; }
+  select {
+    padding: 13px 14px; font-size: 16px; margin-bottom: 10px; min-height: 48px;
+    background: #1f2937; color: #eee; border-radius: 10px;
+    border: 1px solid #374151; width: 100%; max-width: 420px; cursor: pointer;
+  }
+  select:active { background: #26313f; }
+  select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
+  .gauge-note { font-size: 0.78rem; color: #9ca3af; margin: 0 0 16px 0; max-width: 420px; }
+  .search-row { display: flex; gap: 8px; max-width: 420px; margin-bottom: 6px; }
+  #locationSearchInput {
+    flex: 1; padding: 12px 14px; font-size: 16px; min-height: 48px;
+    background: #1f2937; color: #eee; border-radius: 10px; border: 1px solid #374151;
+  }
+  #locationSearchInput:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
+  #locationSearchBtn {
+    padding: 12px 16px; font-size: 15px; min-height: 48px;
+    background: #1f2937; color: #eee; border-radius: 10px; border: 1px solid #374151;
+    cursor: pointer;
+  }
+  #locationSearchBtn:active { background: #26313f; }
+  .compare-item {
+    background: linear-gradient(135deg, #1f2937, #111827); border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 10px; max-width: 420px;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .compare-rank { font-size: 20px; font-weight: bold; color: #6ee7b7; min-width: 24px; }
+  .compare-info { flex: 1; font-size: 14px; }
+  .compare-score { font-size: 18px; font-weight: bold; }
+  .card {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    padding: 18px; margin: 10px 0; border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); width: 100%; max-width: 340px;
+  }
+  .best-day-summary {
+    font-size: 0.88rem; color: #6ee7b7; margin: -6px 0 12px 0;
+    display: none;
+  }
+  .forecast-row {
+    display: flex; flex-direction: row; overflow-x: auto; gap: 14px;
+    padding: 8px 0 18px 0; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+  }
+  .forecast-row::-webkit-scrollbar { height: 6px; }
+  .forecast-row::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+  .forecast-card {
+    background: #1f2937; width: 260px; min-width: 260px; padding: 16px;
+    border-radius: 14px; flex-shrink: 0; scroll-snap-align: start;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); position: relative;
+  }
+  .forecast-card.best { outline: 2px solid #34d399; outline-offset: -2px; }
+  .forecast-card.today-card { border: 1px solid #60a5fa; }
+  .best-badge {
+    position: absolute; top: 12px; right: 12px; font-size: 10px; font-weight: bold;
+    background: #065f46; color: #6ee7b7; padding: 3px 8px; border-radius: 999px;
+    letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .GO { background: linear-gradient(135deg, #065f46, #047857); }
+  .MAYBE { background: linear-gradient(135deg, #92400e, #b45309); }
+  .NO-GO { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
+  .NO-DATA { background: linear-gradient(135deg, #374151, #1f2937); }
+  .score { font-size: 26px; font-weight: bold; }
+  .score .max { font-size: 14px; font-weight: normal; color: rgba(255,255,255,0.65); }
+  .status { font-size: 17px; margin-top: 4px; }
+  .commentary { font-size: 13px; margin: 10px 0 12px 0; line-height: 1.45; color: #e5e7eb; }
+  .check { margin: 5px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 6px; }
+  .tide-times { font-size: 12px; color: #9ca3af; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .pass { color: #4ade80; }
+  .fail { color: #ef4444; }
+  .unknown { color: #9ca3af; font-style: italic; }
+  .icon { font-size: 14px; opacity: .9; flex-shrink: 0; }
+  .section-title { margin: 28px 0 10px 0; font-size: 1.25rem; }
+  .kpi-summary {
+    background: #1f2937; padding: 16px; margin: 28px 0 0 0; border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  }
+  .kpi-summary h2 { margin-top: 0; font-size: 18px; margin-bottom: 10px; }
+  .kpi-item { font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
+  .info { margin-top: 10px; font-size: 0.85rem; color: #9ca3af; }
+  .swipe-hint { font-size: 0.8rem; color: #9ca3af; margin: -4px 0 8px 0; }
+  .skeleton-card {
+    width: 100%; max-width: 340px; height: 220px; border-radius: 14px;
+    background: linear-gradient(90deg, #1f2937 25%, #29354a 37%, #1f2937 63%);
+    background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite;
+  }
+  .skeleton-row { display: flex; gap: 14px; padding: 8px 0 18px 0; overflow: hidden; }
+  .skeleton-row .skeleton-card { min-width: 260px; width: 260px; height: 200px; flex-shrink: 0; }
+  @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  @media (min-width: 900px) {
+    body { text-align: center; }
+    h1, .subtitle { text-align: center; }
+    select, .search-row, .gauge-note, #searchStatus {
+      margin-left: auto; margin-right: auto;
+    }
+    .forecast-row {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 920px; margin: 0 auto;
+      overflow-x: visible; padding-bottom: 4px;
+      text-align: left;
+    }
+    .skeleton-row {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 920px; margin: 0 auto;
+    }
+    .swipe-hint { display: none; }
+    .best-day-summary { max-width: 920px; margin-left: auto; margin-right: auto; }
+    .kpi-summary { max-width: 760px; margin-left: auto; margin-right: auto; text-align: left; }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    select:hover, #locationSearchBtn:hover, #locationSearchInput:hover { background: #26313f; }
+  }
+  @media (max-width: 600px) {
+    body { padding: 12px; padding-top: calc(12px + env(safe-area-inset-top, 32px)); }
+    h1 { font-size: 1.3rem; }
+    .card { max-width: 100%; width: 100%; }
+    .forecast-card { width: 78vw; min-width: 78vw; }
+    .section-title { font-size: 1.15rem; }
+    select, .search-row { max-width: 100%; }
+    .search-row { flex-direction: column; }
+    #locationSearchBtn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="main">
+  <h1>FishGoNoGo</h1>
+
+  <select id="locationSelect">
+    <option value="pine" selected="">Pine River</option>
+    <option value="woody">Woody Point</option>
+    <option value="moreton">Moreton Island</option>
+    <option value="pumicestone">Pumicestone Passage – Bribie Island</option>
+    <option value="scarborough">Scarborough Reef</option>
+    <option value="mud">Mud Island</option>
+    <option value="caboolture">Caboolture River</option>
+  </select>
+  <div class="gauge-note" id="gaugeNote"></div>
+
+  <div class="search-row">
+    <input type="text" id="locationSearchInput" placeholder="Search a place">
+    <button id="locationSearchBtn" type="button">Search</button>
+  </div>
+  <div class="gauge-note" id="searchStatus"></div>
+
+  <h2 class="section-title">This Week</h2>
+  <div class="best-day-summary" id="bestDaySummary" style="display: block;">Best day this week: Today (95/100)</div>
+  <div class="swipe-hint">Swipe sideways to see more days →</div>
+  <div class="forecast-row" id="cardsGrid"><div class="forecast-card" id="topLocationsCard">
+      <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
+      <div id="topLocationsBody">
+    <div class="compare-item" style="margin:0 0 8px 0;">
+      <div class="compare-rank">1</div>
+      <div class="compare-info">Pine River<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
+      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+    </div>
+  
+    <div class="compare-item" style="margin:0 0 8px 0;">
+      <div class="compare-rank">2</div>
+      <div class="compare-info">Woody Point<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
+      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+    </div>
+  
+    <div class="compare-item" style="margin:0 0 8px 0;">
+      <div class="compare-rank">3</div>
+      <div class="compare-info">Mud Island<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
+      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+    </div>
+  </div>
+    </div><div class="forecast-card GO best today-card">
+        <span class="best-badge">Best day</span>
+        
+      <div class="score">95<span class="max">/100</span></div>
+      <div class="status">GO</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Today<br>2026-08-12</h3>
+      <div class="commentary">Score is strong (95/100) — ideal wind all day (around 3km/h), flat, calm water, dry at both dawn and dusk. Best window looks like dawn, with the tide turning right around then too. (📈 data unavailable — score reflects what's known.)</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 3km/h W (ideal) · Sunset 3km/h NE (ideal) — 25/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.24m (calm) — 20/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~40min from sunrise · 2.6m range — 24/28 pts</div><div class="check unknown"><span class="icon">📈</span> – Pressure (no data) — no data</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 2:00am · High 7:00am · Low 1:00pm · High 8:00pm</div>
+      </div><div class="forecast-card GO">
+        
+        
+      <div class="score">72<span class="max">/100</span></div>
+      <div class="status">GO</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Thursday<br>2026-08-13</h3>
+      <div class="commentary">Score is strong (72/100) — pressure's climbing fast, dry at both dawn and dusk, light, comfortable chop. Best window looks like sunset.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 15km/h WSW (moderate) · Sunset 9km/h ESE (ideal) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.34m (light) — 15/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~100min from sunrise · 2.6m range — 13/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Strong rising pressure — 20/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 2:00am · High 8:00am · Low 2:00pm · High 9:00pm</div>
+      </div><div class="forecast-card MAYBE">
+        
+        
+      <div class="score">64<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Friday<br>2026-08-14</h3>
+      <div class="commentary">Score is mixed (64/100). In your favor: pressure's climbing fast, dry at both dawn and dusk, ideal wind all day (around 10km/h). Working against it: tide timing doesn't line up with dawn or dusk on a big tidal swing. Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 9km/h SW (ideal) · Sunset 10km/h SE (ideal) — 20/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.66m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ No tide turn within 2hrs of dawn/dusk · 2.5m range — 8/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Strong rising pressure — 20/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 3:00am · High 9:00am · Low 3:00pm · High 9:00pm</div>
+      </div><div class="forecast-card MAYBE">
+        
+        
+      <div class="score">67<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Saturday<br>2026-08-15</h3>
+      <div class="commentary">Score is mixed (67/100). In your favor: dry at dawn and dusk, though ~2mm is expected through the middle of the day, pressure's on the rise, ideal wind at dawn (12km/h), moderate by sunset (13km/h). Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (ideal) · Sunset 13km/h SSE (moderate) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.70m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~86min from sunset · 2.3m range — 18/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 16/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~2mm expected mid-day — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 4:00am · High 10:00am · Low 4:00pm · High 10:00pm</div>
+      </div><div class="forecast-card MAYBE">
+        
+        
+      <div class="score">60<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Sunday<br>2026-08-16</h3>
+      <div class="commentary">Score is mixed (60/100). In your favor: dry at both dawn and dusk. Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (moderate) · Sunset 14km/h SSE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.72m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~87min from sunset · 1.9m range — 18/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 12/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 4:00am · High 10:00am · Low 4:00pm</div>
+      </div><div class="forecast-card GO">
+        
+        
+      <div class="score">73<span class="max">/100</span></div>
+      <div class="status">GO</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Monday<br>2026-08-17</h3>
+      <div class="commentary">Score is strong (73/100) — dry at dawn and dusk, though ~6mm is expected through the middle of the day, a low tide turning right near sunset on a big tidal swing, pressure's on the rise. Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 14km/h SSW (moderate) · Sunset 12km/h SSE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.72m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~27min from sunset · 1.7m range — 27/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 16/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~6mm expected mid-day — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 5:00am · High 11:00am · Low 5:00pm</div>
+      </div><div class="forecast-card MAYBE">
+        
+        
+      <div class="score">64<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Tuesday<br>2026-08-18</h3>
+      <div class="commentary">Score is mixed (64/100). In your favor: dry at both dawn and dusk, a low tide turning right near sunset on a big tidal swing. Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 14km/h S (moderate) · Sunset 14km/h SE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.66m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~32min from sunset · 1.5m range — 22/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 12/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 5:00am · High 12:00pm · Low 6:00pm</div>
+      </div><div class="forecast-card GO">
+        
+        
+      <div class="score">71<span class="max">/100</span></div>
+      <div class="status">GO</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Wednesday<br>2026-08-19</h3>
+      <div class="commentary">Score is strong (71/100) — dry at both dawn and dusk, a low tide turning right near sunrise on a big tidal swing, moderate wind at dawn (12km/h), ideal by sunset (12km/h). Best window looks like sunset.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (moderate) · Sunset 12km/h SE (ideal) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.78m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~14min from sunrise · 1.4m range — 26/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 12/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 6:00am · High 1:00pm · Low 7:00pm</div>
+      </div></div>
+
+  <div class="kpi-summary">
+    <h2>How KPIs Are Calculated (max 100)</h2>
+    <div class="kpi-item"><strong>Wind — 25 pts.</strong> Dawn and sunset wind speed are each scored, then averaged. Calmer = more points.</div>
+    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Tiered from &lt;0.3m (best) down to 0 pts above 1.2m.</div>
+    <div class="kpi-item"><strong>Tide — 28 pts.</strong> Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
+    <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Rising or stable pressure scores higher than falling.</div>
+    <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Both windows dry: 7 pts · one wet: 4 pts · both wet: 0 pts. Rain expected mid-day is noted separately even when this scores well.</div>
+    <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
+    <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
+  </div>
+</div>
+
+<script>
+const LOCATIONS = {
+  pine:        { lat: -27.273, lon: 153.040, name: "Pine River" },
+  woody:       { lat: -27.255, lon: 153.102, name: "Woody Point" },
+  moreton:     { lat: -27.083, lon: 153.383, name: "Moreton Island" },
+  pumicestone: { lat: -27.015, lon: 153.100, name: "Pumicestone Passage – Bribie Island", distantGauge: true },
+  scarborough: { lat: -27.210, lon: 153.120, name: "Scarborough Reef" },
+  mud:         { lat: -27.320, lon: 153.215, name: "Mud Island" },
+  caboolture:  { lat: -27.128, lon: 153.063, name: "Caboolture River" }
+};
+
+const STORAGE_KEY = "fishGoNoGo.lastLocation";
+
+function dayName(dateStr) {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  return dt.toLocaleDateString("en-AU", { weekday: "long", timeZone: "UTC" });
+}
+
+function compass(deg) {
+  if (deg == null || Number.isNaN(deg)) return "";
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  const idx = Math.round(deg / 22.5) % 16;
+  return dirs[idx];
+}
+
+function getHourIndexForDay(weather, dayOffset, targetHour) {
+  if (!weather?.daily?.time?.[dayOffset] || !weather?.hourly?.time) return null;
+  const dayStr = weather.daily.time[dayOffset].slice(0, 10);
+  const hourStr = String(targetHour).padStart(2, "0");
+  const needle = dayStr + "T" + hourStr + ":";
+  for (let i = 0; i < weather.hourly.time.length; i++) {
+    if (weather.hourly.time[i].startsWith(needle)) return i;
+  }
+  return null;
+}
+
+function timeToMinutes(isoLocal) {
+  if (!isoLocal || isoLocal.length < 16) return null;
+  const hh = parseInt(isoLocal.slice(11, 13), 10);
+  const mm = parseInt(isoLocal.slice(14, 16), 10);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  return hh * 60 + mm;
+}
+
+function minutesToClock(mins) {
+  if (mins == null) return "";
+  const h24 = Math.floor(mins / 60) % 24;
+  const m = ((mins % 60) + 60) % 60;
+  const period = h24 < 12 ? "am" : "pm";
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return `${h12}:${String(m).padStart(2, "0")}${period}`;
+}
+
+/* Tide data: Open-Meteo's Marine API includes sea_level_height_msl, which factors
+   in astronomical tides (via the Copernicus/SMOC ocean model). This reuses the same
+   marine-api.open-meteo.com endpoint already used for wave height elsewhere in this
+   file, so it inherits the same working cross-origin access and JSON format —
+   no separate CORS-prone government CSV feed needed.
+
+   Caveats, disclosed in the UI: the underlying model resolves at ~8km, so it's not
+   suitable for coastal navigation and can be less accurate in enclosed or narrow
+   waters (relevant for Pumicestone Passage specifically). The datum is global mean
+   sea level, not Lowest Astronomical Tide, but that only offsets the absolute
+   height — turn timing and tidal range (both used in scoring) are unaffected. */
+function tidePointsFromMarine(marine) {
+  const times = marine?.hourly?.time;
+  const heights = marine?.hourly?.sea_level_height_msl;
+  const points = [];
+  if (!times || !heights) return points;
+  for (let i = 0; i < times.length; i++) {
+    const h = heights[i];
+    if (h == null) continue;
+    const mins = timeToMinutes(times[i]);
+    if (mins == null) continue;
+    points.push({ dateStr: times[i].slice(0, 10), minutes: mins, height: h });
+  }
+  return points;
+}
+
+function findQldTideTurns(points, dayStr) {
+  const dayPts = points.filter(p => p.dateStr === dayStr.slice(0, 10));
+  if (dayPts.length < 3) return [];
+  dayPts.sort((a, b) => a.minutes - b.minutes);
+
+  const turns = [];
+  for (let i = 1; i < dayPts.length - 1; i++) {
+    const prev = dayPts[i - 1].height;
+    const cur = dayPts[i].height;
+    const next = dayPts[i + 1].height;
+    if (cur > prev && cur >= next) turns.push({ type: "high", minutes: dayPts[i].minutes });
+    else if (cur < prev && cur <= next) turns.push({ type: "low", minutes: dayPts[i].minutes });
+  }
+  return turns;
+}
+
+/* Tide scoring: up to 20 pts for timing near dawn/dusk (gradated, not all-or-nothing),
+   plus up to 8 bonus pts for a bigger tidal range that day. Max 28. */
+function tideNearSun(weather, qldPoints, dayOffset) {
+  const dayStr = weather?.daily?.time?.[dayOffset];
+  const sunrise = weather?.daily?.sunrise?.[dayOffset];
+  const sunset = weather?.daily?.sunset?.[dayOffset];
+  const sunRiseMin = timeToMinutes(sunrise);
+  const sunSetMin = timeToMinutes(sunset);
+
+  if (!dayStr || (sunRiseMin == null && sunSetMin == null)) {
+    return { pass: false, label: "Tide (no sun data)", points: 0, valid: false, turnsLabel: null };
+  }
+  if (!qldPoints || !qldPoints.length) {
+    return { pass: false, label: "Tide (no gauge data)", points: 0, valid: false, turnsLabel: null };
+  }
+
+  const dayPts = qldPoints.filter(p => p.dateStr === dayStr.slice(0, 10));
+  const turns = findQldTideTurns(qldPoints, dayStr);
+  if (!turns.length || dayPts.length < 3) {
+    return { pass: false, label: "Tide (no turns found in gauge data)", points: 0, valid: false, turnsLabel: null };
+  }
+
+  const sortedTurns = turns.slice().sort((a, b) => a.minutes - b.minutes);
+  const turnsLabel = sortedTurns
+    .map(t => `${t.type === "high" ? "High" : "Low"} ${minutesToClock(t.minutes)}`)
+    .join(" · ");
+
+  let best = null;
+  for (const turn of turns) {
+    if (sunRiseMin != null) {
+      const diff = Math.abs(turn.minutes - sunRiseMin);
+      if (!best || diff < best.diff) best = { turn, sun: "sunrise", diff };
+    }
+    if (sunSetMin != null) {
+      const diff = Math.abs(turn.minutes - sunSetMin);
+      if (!best || diff < best.diff) best = { turn, sun: "sunset", diff };
+    }
+  }
+
+  let timingScore = 0;
+  if (best) {
+    if (best.diff <= 30) timingScore = 20;
+    else if (best.diff <= 60) timingScore = 16;
+    else if (best.diff <= 90) timingScore = 10;
+    else if (best.diff <= 120) timingScore = 5;
+    else timingScore = 0;
+  }
+
+  const heights = dayPts.map(p => p.height);
+  const range = Math.max(...heights) - Math.min(...heights);
+  const rangeBonus = Math.round(Math.min(8, Math.max(0, (range / 2.0) * 8)));
+  const points = timingScore + rangeBonus;
+
+  const label = (best && timingScore > 0)
+    ? `${best.turn.type === "high" ? "High" : "Low"} tide ~${best.diff}min from ${best.sun} · ${range.toFixed(1)}m range`
+    : `No tide turn within 2hrs of dawn/dusk · ${range.toFixed(1)}m range`;
+
+  let blurb = (best && timingScore > 0)
+    ? `a ${best.turn.type} tide turning right near ${best.sun}`
+    : "tide timing doesn't line up with dawn or dusk";
+  if (rangeBonus >= 6) blurb += " on a big tidal swing";
+  else if (rangeBonus <= 2) blurb += " on a small tide";
+
+  return { pass: points > 0, label, blurb, points, valid: true, turnsLabel };
+}
+
+/* Rain near dawn (~6, ±1hr window) and dusk (~18, ±1hr window) — a window instead of
+   a single instantaneous hour, so a shower landing at 7am isn't missed by a check
+   fixed at exactly 6am. Also surfaces the day's total rainfall (already fetched via
+   daily.precipitation_sum but previously unused) so "dry at dawn/dusk" doesn't look
+   contradictory next to a forecast showing rain through the middle of the day. */
+function precipNear(weather, dayOffset, targetHour, windowHours) {
+  const idx = getHourIndexForDay(weather, dayOffset, targetHour);
+  if (idx == null) return null;
+  let maxVal = null;
+  for (let offset = -windowHours; offset <= windowHours; offset++) {
+    const v = weather.hourly.precipitation?.[idx + offset];
+    if (v != null) maxVal = (maxVal == null) ? v : Math.max(maxVal, v);
+  }
+  return maxVal;
+}
+
+function rainAtDawnDusk(weather, dayOffset) {
+  const rainDawn = precipNear(weather, dayOffset, 6, 1);
+  const rainDusk = precipNear(weather, dayOffset, 18, 1);
+  const dailyTotal = weather?.daily?.precipitation_sum?.[dayOffset] ?? null;
+
+  if (rainDawn == null && rainDusk == null) {
+    return { score: 0, label: "Rain (no data)", valid: false, blurb: null };
+  }
+
+  const dawnDry = (rainDawn ?? 0) < 1;
+  const duskDry = (rainDusk ?? 0) < 1;
+  const middayRain = dailyTotal != null && dailyTotal >= 2 && dawnDry && duskDry;
+  const middayNote = middayRain ? ` · ~${dailyTotal.toFixed(0)}mm expected mid-day` : "";
+
+  if (dawnDry && duskDry) {
+    const blurb = middayRain
+      ? `dry at dawn and dusk, though ~${dailyTotal.toFixed(0)}mm is expected through the middle of the day`
+      : "dry at both dawn and dusk";
+    return { score: 7, label: `Dawn & dusk dry${middayNote}`, valid: true, blurb };
+  }
+  if (dawnDry || duskDry) {
+    const wet = dawnDry ? "dusk" : "dawn";
+    return { score: 4, label: `Rain at ${wet} only`, valid: true, blurb: `rain likely at ${wet}` };
+  }
+  return { score: 0, label: "Rain at dawn & dusk", valid: true, blurb: "rain likely at both dawn and dusk" };
+}
+
+/* Wind: tiered 0-25, applied separately to dawn and dusk then averaged */
+function windPoints(speed) {
+  if (speed < 8)  return { score: 25, tier: "ideal" };
+  if (speed < 12) return { score: 20, tier: "ideal" };
+  if (speed < 16) return { score: 14, tier: "moderate" };
+  if (speed < 20) return { score: 8,  tier: "moderate" };
+  if (speed < 25) return { score: 3,  tier: "strong" };
+  return { score: 0, tier: "strong" };
+}
+
+/* Wave height: tiered 0-20 instead of a single 0.5m cutoff */
+function wavePoints(h) {
+  if (h < 0.3) return { score: 20, tier: "calm" };
+  if (h < 0.5) return { score: 15, tier: "light" };
+  if (h < 0.8) return { score: 9,  tier: "moderate" };
+  if (h < 1.2) return { score: 4,  tier: "choppy" };
+  return { score: 0, tier: "rough" };
+}
+
+function pressurePoints(pDiff, pAbs) {
+  let score = 0;
+  let label = "";
+  if (pDiff > 3) { score = 18; label = "Strong rising pressure"; }
+  else if (pDiff > 1) { score = 14; label = "Pressure rising"; }
+  else if (Math.abs(pDiff) <= 1) { score = 10; label = "Pressure stable"; }
+  else if (pDiff > -2) { score = 4; label = "Pressure slightly falling"; }
+  else { score = 0; label = "Rapid pressure drop"; }
+
+  if (pAbs > 1018) score += 2;
+  if (pAbs < 1010) score = Math.max(0, score - 2);
+  score = Math.min(20, Math.max(0, score));
+  return { score, label };
+}
+
+function hasValidData(arr) {
+  return Array.isArray(arr) && arr.some(v => v !== null && v !== undefined);
+}
+
+async function loadWeather(lat, lon) {
+  const bomUrl =
+    `https://api.open-meteo.com/v1/bom?latitude=${lat}&longitude=${lon}` +
+    `&hourly=wind_speed_10m,wind_direction_10m,precipitation,surface_pressure` +
+    `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,sunrise,sunset` +
+    `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
+
+  try {
+    const res = await fetch(bomUrl);
+    const data = await res.json();
+    if (hasValidData(data?.hourly?.wind_speed_10m) && hasValidData(data?.hourly?.surface_pressure)) {
+      return data;
+    }
+  } catch (e) {
+    console.warn("BOM failed, fallback...", e);
+  }
+
+  const fallbackUrl =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=wind_speed_10m,wind_direction_10m,precipitation,surface_pressure` +
+    `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,sunrise,sunset` +
+    `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
+
+  return await (await fetch(fallbackUrl)).json();
+}
+
+
+/* Computes one day's full score. Shared by "today" and each of the next 7 days
+   so both use identical logic (previously they diverged, especially for pressure). */
+function computeDayScore(weather, marine, qldPoints, dayOffset) {
+  const dawnIdx = getHourIndexForDay(weather, dayOffset, 6);
+  const duskIdx = getHourIndexForDay(weather, dayOffset, 18);
+
+  // WIND — dawn and dusk scored separately, then averaged
+  const windDawnRaw = dawnIdx !== null ? weather.hourly.wind_speed_10m?.[dawnIdx] : null;
+  const windDuskRaw = duskIdx !== null ? weather.hourly.wind_speed_10m?.[duskIdx] : null;
+  const dirDawn = dawnIdx !== null ? weather.hourly.wind_direction_10m?.[dawnIdx] : null;
+  const dirDusk = duskIdx !== null ? weather.hourly.wind_direction_10m?.[duskIdx] : null;
+
+  let windCheck;
+  if (windDawnRaw == null && windDuskRaw == null) {
+    windCheck = { name: "Wind (no data)", pass: false, score: 0, maxScore: 25, valid: false, icon: "💨", blurb: null, dawn: null, dusk: null };
+  } else {
+    const parts = [];
+    let sum = 0, count = 0;
+    let dawnInfo = null, duskInfo = null;
+    if (windDawnRaw != null) {
+      const wp = windPoints(windDawnRaw);
+      sum += wp.score; count++;
+      dawnInfo = { raw: windDawnRaw, score: wp.score, tier: wp.tier };
+      parts.push(`Dawn ${windDawnRaw.toFixed(0)}km/h${dirDawn != null ? " " + compass(dirDawn) : ""} (${wp.tier})`);
+    }
+    if (windDuskRaw != null) {
+      const wp = windPoints(windDuskRaw);
+      sum += wp.score; count++;
+      duskInfo = { raw: windDuskRaw, score: wp.score, tier: wp.tier };
+      parts.push(`Sunset ${windDuskRaw.toFixed(0)}km/h${dirDusk != null ? " " + compass(dirDusk) : ""} (${wp.tier})`);
+    }
+    const avgScore = Math.round(sum / count);
+
+    let windBlurb;
+    if (dawnInfo && duskInfo) {
+      if (dawnInfo.tier === duskInfo.tier) {
+        windBlurb = `${dawnInfo.tier} wind all day (around ${Math.round((dawnInfo.raw + duskInfo.raw) / 2)}km/h)`;
+      } else {
+        windBlurb = `${dawnInfo.tier} wind at dawn (${dawnInfo.raw.toFixed(0)}km/h), ${duskInfo.tier} by sunset (${duskInfo.raw.toFixed(0)}km/h)`;
+      }
+    } else {
+      const only = dawnInfo || duskInfo;
+      const when = dawnInfo ? "dawn" : "sunset";
+      windBlurb = `${only.tier} wind at ${when} (${only.raw.toFixed(0)}km/h)`;
+    }
+
+    windCheck = { name: parts.join(" · "), pass: avgScore > 0, score: avgScore, maxScore: 25, valid: true, icon: "💨", blurb: windBlurb, dawn: dawnInfo, dusk: duskInfo };
+  }
+
+  // WAVE
+  const waveRaw = dayOffset === 0 ? marine?.hourly?.wave_height?.[0] : marine?.daily?.wave_height_max?.[dayOffset];
+  let waveCheck;
+  if (waveRaw == null) {
+    waveCheck = { name: "Wave height (no data)", pass: false, score: 0, maxScore: 20, valid: false, icon: "🌊", blurb: null };
+  } else {
+    const wv = wavePoints(waveRaw);
+    const waveBlurbs = { calm: "flat, calm water", light: "light, comfortable chop", moderate: "some chop out there", choppy: "choppy conditions", rough: "rough, uncomfortable seas" };
+    waveCheck = { name: `Wave ${waveRaw.toFixed(2)}m (${wv.tier})`, pass: wv.score > 0, score: wv.score, maxScore: 20, valid: true, icon: "🌊", blurb: waveBlurbs[wv.tier] };
+  }
+
+  // TIDE
+  const tideResult = tideNearSun(weather, qldPoints, dayOffset);
+  const tideCheck = { name: tideResult.label, pass: tideResult.pass, score: tideResult.points, maxScore: 28, valid: tideResult.valid, icon: "🕐", blurb: tideResult.blurb || null };
+
+  // Best window to fish: whichever of dawn/sunset has calmer wind, noting if the tide agrees
+  let bestWindow = null;
+  let tideAgrees = false;
+  if (windCheck.valid && (windCheck.dawn || windCheck.dusk)) {
+    if (windCheck.dawn && windCheck.dusk) {
+      bestWindow = windCheck.dawn.score >= windCheck.dusk.score ? "dawn" : "sunset";
+    } else {
+      bestWindow = windCheck.dawn ? "dawn" : "sunset";
+    }
+    const sunWord = bestWindow === "dawn" ? "sunrise" : "sunset";
+    tideAgrees = !!(tideResult.valid && tideResult.pass && tideResult.blurb && tideResult.blurb.includes(sunWord));
+  }
+
+  // PRESSURE — same dawn-vs-12h-earlier method for every day, today included
+  const pPrevIdx = dawnIdx !== null ? dawnIdx - 12 : null;
+  const pNow = dawnIdx !== null ? weather.hourly.surface_pressure?.[dawnIdx] : null;
+  const pPrev = (pPrevIdx !== null && pPrevIdx >= 0) ? weather.hourly.surface_pressure?.[pPrevIdx] : null;
+  let pressCheck;
+  if (pNow == null || pPrev == null) {
+    pressCheck = { name: "Pressure (no data)", pass: false, score: 0, maxScore: 20, valid: false, icon: "📈", blurb: null };
+  } else {
+    const p = pressurePoints(pNow - pPrev, pNow);
+    const pressureBlurbs = {
+      "Strong rising pressure": "pressure's climbing fast",
+      "Pressure rising": "pressure's on the rise",
+      "Pressure stable": "pressure holding steady",
+      "Pressure slightly falling": "pressure easing back a little",
+      "Rapid pressure drop": "pressure's dropping fast"
+    };
+    pressCheck = { name: p.label, pass: p.score > 0, score: p.score, maxScore: 20, valid: true, icon: "📈", blurb: pressureBlurbs[p.label] || p.label.toLowerCase() };
+  }
+
+  // RAIN
+  const rainInfo = rainAtDawnDusk(weather, dayOffset);
+  const rainCheck = { name: rainInfo.label, pass: rainInfo.score > 0, score: rainInfo.score, maxScore: 7, valid: rainInfo.valid, icon: "🌧️", blurb: rainInfo.valid ? rainInfo.blurb : null };
+
+  const checks = [windCheck, waveCheck, tideCheck, pressCheck, rainCheck];
+
+  const rawScore = checks.reduce((a, c) => a + (c.valid ? c.score : 0), 0);
+  const rawMax = checks.reduce((a, c) => a + (c.valid ? c.maxScore : 0), 0);
+  const score = rawMax > 0 ? Math.round((rawScore / rawMax) * 100) : 0;
+  const status = rawMax === 0 ? "NO-DATA" : (score >= 70 ? "GO" : score >= 40 ? "MAYBE" : "NO-GO");
+
+  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null };
+}
+
+function scoreRationale(checks, status, score, extra) {
+  if (status === "NO-DATA") return "Not enough data was available to calculate a score for this day.";
+
+  const valid = checks.filter(c => c.valid);
+  const missing = checks.filter(c => !c.valid);
+
+  // Rank by score-as-a-fraction-of-max, not just score>0 — a "strong wind" check still
+  // scores a few points, so a plain pass/fail split was miscounting it as a positive.
+  const ranked = valid
+    .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0 }))
+    .sort((a, b) => b.ratio - a.ratio);
+
+  const strong = ranked.filter(c => c.ratio >= 0.65);
+  const weak = ranked.filter(c => c.ratio <= 0.3);
+
+  const goodBits = strong.map(c => c.blurb || c.name.toLowerCase()).slice(0, 3);
+  const badBits = weak.map(c => c.blurb || c.name.toLowerCase()).slice(0, 3);
+
+  const missingNote = missing.length
+    ? ` (${missing.map(c => c.icon).join(" ")} data unavailable — score reflects what's known.)`
+    : "";
+
+  let tip = "";
+  if ((status === "GO" || status === "MAYBE") && extra?.bestWindow) {
+    tip = ` Best window looks like ${extra.bestWindow}${extra.tideAgrees ? ", with the tide turning right around then too" : ""}.`;
+  } else if (status === "NO-GO") {
+    tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
+  }
+
+  if (status === "GO") {
+    let text = `Score is strong (${score}/100) — ${goodBits.join(", ") || "conditions line up well across the board"}.`;
+    text += badBits.length ? ` Only real drag is ${badBits.join(" and ")}.` : "";
+    return text + tip + missingNote;
+  }
+  if (status === "MAYBE") {
+    let text = `Score is mixed (${score}/100).`;
+    text += goodBits.length ? ` In your favor: ${goodBits.join(", ")}.` : "";
+    text += badBits.length ? ` Working against it: ${badBits.join(", ")}.` : "";
+    return text + tip + missingNote;
+  }
+  let text = `Score is low (${score}/100), mainly because ${badBits.join(", ") || "several factors are working against a session"}.`;
+  text += goodBits.length ? ` A few bright spots though: ${goodBits.join(", ")}.` : "";
+  return text + tip + missingNote;
+}
+
+function renderChecklist(checks) {
+  return checks.map(c => {
+    const tick = c.valid ? (c.pass ? "✓" : "✗") : "–";
+    const cls = !c.valid ? "unknown" : (c.pass ? "pass" : "fail");
+    const ptsTxt = c.valid ? `${c.score}/${c.maxScore} pts` : "no data";
+    return `<div class="check ${cls}"><span class="icon">${c.icon}</span> ${tick} ${c.name} — ${ptsTxt}</div>`;
+  }).join("");
+}
+
+function renderCard(dateStr, result, extraClass, headingHTML) {
+  const { checks, score, status, bestWindow, tideAgrees, tideTimes } = result;
+  const tideTimesHTML = tideTimes ? `<div class="tide-times">🕐 ${tideTimes}</div>` : "";
+  return `
+      <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
+      <div class="status">${status}</div>
+      ${headingHTML}
+      <div class="commentary">${scoreRationale(checks, status, score, { bestWindow, tideAgrees })}</div>
+      ${renderChecklist(checks)}
+      ${tideTimesHTML}`;
+}
+
+function renderTopLocationsCardHTML(top3, loading) {
+  if (loading) return `<div class="commentary">Checking all locations…</div>`;
+  if (!top3.length) return `<div class="commentary">No data available right now.</div>`;
+  return top3.map((c, i) => `
+    <div class="compare-item" style="margin:0 0 8px 0;">
+      <div class="compare-rank">${i + 1}</div>
+      <div class="compare-info">${c.locationName}<br><span style="color:#9ca3af;">${dayName(c.date)} · ${c.date}</span></div>
+      <div class="compare-score">${c.score}<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+    </div>
+  `).join("");
+}
+
+/* Scans every preset location across the next 8 days and finds the top 3 by score.
+   Runs automatically alongside the main location's load, rather than behind a
+   button — the scan is fast enough not to be worth gating. */
+async function loadTopLocationsCard() {
+  const allCandidates = [];
+  await Promise.all(Object.entries(LOCATIONS).map(async ([key, loc]) => {
+    try {
+      const [weather, marine] = await Promise.all([
+        loadWeather(loc.lat, loc.lon),
+        fetch(
+          `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
+          `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
+          `&timezone=Australia%2FBrisbane&forecast_days=8`
+        ).then(r => r.json())
+      ]);
+      if (!weather?.hourly?.wind_speed_10m) return;
+      const points = tidePointsFromMarine(marine);
+      for (let day = 0; day <= 7; day++) {
+        const date = weather.daily.time?.[day];
+        if (!date) continue;
+        const r = computeDayScore(weather, marine, points, day);
+        if (r.status === "NO-DATA") continue;
+        allCandidates.push({ locationName: loc.name, date, score: r.score, status: r.status });
+      }
+    } catch (e) {
+      console.warn("Top-locations scan failed for", key, e);
+    }
+  }));
+
+  allCandidates.sort((a, b) => b.score - a.score);
+  const body = document.getElementById("topLocationsBody");
+  if (body) body.innerHTML = renderTopLocationsCardHTML(allCandidates.slice(0, 3), false);
+}
+
+async function load() {
+  const select = document.getElementById("locationSelect");
+  const key = select.value;
+  const loc = LOCATIONS[key];
+  const { lat, lon, name } = loc;
+
+  try { localStorage.setItem(STORAGE_KEY, key); } catch (e) { /* storage unavailable, ignore */ }
+
+  const gaugeNote = document.getElementById("gaugeNote");
+  gaugeNote.textContent = loc.distantGauge
+    ? `Note: tide accuracy is more limited in a narrow passage like ${name.split("–")[0].trim()} than in the open bay.`
+    : "";
+
+  document.getElementById("cardsGrid").innerHTML =
+    `<div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>`;
+  document.getElementById("bestDaySummary").style.display = "none";
+
+  try {
+    const [weather, marine] = await Promise.all([
+      loadWeather(lat, lon),
+      fetch(
+        `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
+        `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
+        `&timezone=Australia%2FBrisbane&forecast_days=8`
+      ).then(r => r.json())
+    ]);
+    const qldPoints = tidePointsFromMarine(marine);
+
+    if (!qldPoints.length) {
+      gaugeNote.textContent += " (Tide data is currently unavailable — see the browser console for details.)";
+    }
+
+    if (!weather?.hourly?.wind_speed_10m) {
+      throw new Error("Missing weather data");
+    }
+
+    /* ========== TODAY + NEXT 7 DAYS, ONE UNIFIED SET ========== */
+    const dayResults = [];
+    for (let i = 0; i <= 7; i++) {
+      const date = weather.daily.time[i];
+      const r = computeDayScore(weather, marine, qldPoints, i);
+      dayResults.push({ i, date, r });
+    }
+
+    const scored = dayResults.filter(x => x.r.status !== "NO-DATA");
+    let bestIdx = -1;
+    if (scored.length) {
+      const best = scored.reduce((a, b) => (b.r.score > a.r.score ? b : a));
+      bestIdx = best.i;
+      const summaryEl = document.getElementById("bestDaySummary");
+      const bestLabel = best.i === 0 ? "Today" : dayName(best.date);
+      summaryEl.textContent = `Best day this week: ${bestLabel} (${best.r.score}/100)`;
+      summaryEl.style.display = "block";
+    }
+
+    let cardsHTML = `<div class="forecast-card" id="topLocationsCard">
+      <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
+      <div id="topLocationsBody">${renderTopLocationsCardHTML([], true)}</div>
+    </div>`;
+
+    dayResults.forEach(({ i, date, r }) => {
+      const label = i === 0 ? "Today" : dayName(date);
+      const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}<br>${date}</h3>`;
+      const isBest = i === bestIdx;
+      cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}">
+        ${isBest ? '<span class="best-badge">Best day</span>' : ""}
+        ${renderCard(date, r, "", heading)}
+      </div>`;
+    });
+
+    document.getElementById("cardsGrid").innerHTML = cardsHTML;
+
+    // Runs after the main grid renders, since scanning every location takes longer
+    // than loading just the selected one — the 9th card fills in once it resolves.
+    loadTopLocationsCard();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById("cardsGrid").innerHTML =
+      "<div class='card'>Error loading data. Check console for details.</div>";
+  }
+}
+
+(function initLocation() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && LOCATIONS[saved]) {
+      document.getElementById("locationSelect").value = saved;
+    }
+  } catch (e) { /* storage unavailable, ignore */ }
+})();
+
+async function searchLocation() {
+  const input = document.getElementById("locationSearchInput");
+  const status = document.getElementById("searchStatus");
+  const query = input.value.trim();
+  if (!query) return;
+
+  status.textContent = "Searching…";
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+    const data = await (await fetch(url)).json();
+    const match = data?.results?.[0];
+    if (!match) {
+      status.textContent = `No place found for "${query}".`;
+      return;
+    }
+    const label = [match.name, match.admin1, match.country].filter(Boolean).join(", ");
+    LOCATIONS.custom = { lat: match.latitude, lon: match.longitude, name: label };
+
+    const select = document.getElementById("locationSelect");
+    let opt = select.querySelector('option[value="custom"]');
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = "custom";
+      select.appendChild(opt);
+    }
+    opt.textContent = label;
+    select.value = "custom";
+    status.textContent = "";
+    load();
+  } catch (e) {
+    console.warn("Geocoding failed", e);
+    status.textContent = "Search failed — try again.";
+  }
+}
+
+document.getElementById("locationSearchBtn").addEventListener("click", searchLocation);
+document.getElementById("locationSearchInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); searchLocation(); }
+});
+document.getElementById("locationSelect").addEventListener("change", load);
+load();
+</script>
+
+
+</body></html>
