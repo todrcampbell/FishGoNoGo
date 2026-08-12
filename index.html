@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0043)file:///C:/Users/61448/Downloads/index.html -->
+<!-- saved from url=(0045)file:///C:/Users/61448/Downloads/index_6.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
@@ -18,7 +18,7 @@
     -webkit-text-size-adjust: 100%;
     overscroll-behavior-y: contain;
   }
-  .main { max-width: 1400px; margin: auto; }
+  .main { max-width: 1400px; margin: auto; padding-bottom: 30vh; }
   h1 { margin: 0 0 6px 0; font-size: 1.45rem; }
   .subtitle { color: #9ca3af; margin-bottom: 16px; font-size: 0.9rem; }
   select {
@@ -29,6 +29,11 @@
   select:active { background: #26313f; }
   select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
   .gauge-note { font-size: 0.78rem; color: #9ca3af; margin: 0 0 16px 0; max-width: 420px; }
+  .pref-toggle {
+    display: flex; align-items: center; gap: 8px; font-size: 14px; color: #d1d5db;
+    margin: 8px 0 0 0; cursor: pointer; min-height: 24px;
+  }
+  .pref-toggle input { width: 18px; height: 18px; cursor: pointer; accent-color: #34d399; }
   .search-row { display: flex; gap: 8px; max-width: 420px; margin-bottom: 6px; }
   #locationSearchInput {
     flex: 1; padding: 12px 14px; font-size: 16px; min-height: 48px;
@@ -152,7 +157,7 @@
     <option value="pine" selected="">Pine River</option>
     <option value="woody">Woody Point</option>
     <option value="moreton">Moreton Island</option>
-    <option value="pumicestone">Pumicestone Passage – Bribie Island</option>
+    <option value="pumicestone">Pumicestone Passage</option>
     <option value="scarborough">Scarborough Reef</option>
     <option value="mud">Mud Island</option>
     <option value="caboolture">Caboolture River</option>
@@ -166,112 +171,122 @@
   <div class="gauge-note" id="searchStatus"></div>
 
   <h2 class="section-title">This Week</h2>
-  <div class="best-day-summary" id="bestDaySummary" style="display: block;">Best day this week: Today (95/100)</div>
+  <div class="best-day-summary" id="bestDaySummary" style="display: block;">Best day this week: Today (63/100)</div>
   <div class="swipe-hint">Swipe sideways to see more days →</div>
   <div class="forecast-row" id="cardsGrid"><div class="forecast-card" id="topLocationsCard">
       <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
       <div id="topLocationsBody">
     <div class="compare-item" style="margin:0 0 8px 0;">
       <div class="compare-rank">1</div>
-      <div class="compare-info">Woody Point<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
-      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+      <div class="compare-info">Pine River<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
+      <div class="compare-score">90<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
     </div>
   
     <div class="compare-item" style="margin:0 0 8px 0;">
       <div class="compare-rank">2</div>
-      <div class="compare-info">Pine River<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
-      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+      <div class="compare-info">Woody Point<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
+      <div class="compare-score">90<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
     </div>
   
     <div class="compare-item" style="margin:0 0 8px 0;">
       <div class="compare-rank">3</div>
       <div class="compare-info">Mud Island<br><span style="color:#9ca3af;">Wednesday · 2026-08-12</span></div>
-      <div class="compare-score">95<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
+      <div class="compare-score">90<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
     </div>
   </div>
-    </div><div class="forecast-card GO best today-card">
+    </div><div class="forecast-card MAYBE best today-card">
         <span class="best-badge">Best day</span>
         
-      <div class="score">95<span class="max">/100</span></div>
-      <div class="status">GO</div>
+      <div class="score">63<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Today<br>2026-08-12</h3>
-      <div class="commentary">Score is strong (95/100) — ideal wind all day (around 3km/h), flat, calm water, dry at both dawn and dusk. Best window looks like dawn, with the tide turning right around then too. (📈 data unavailable — score reflects what's known.)</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 3km/h W (ideal) · Sunset 3km/h NE (ideal) — 25/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.24m (calm) — 20/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~40min from sunrise · 2.6m range — 24/28 pts</div><div class="check unknown"><span class="icon">📈</span> – Pressure (no data) — no data</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
-      <div class="tide-times">🕐 Low 2:00am · High 7:00am · Low 1:00pm · High 8:00pm</div>
-      </div><div class="forecast-card MAYBE">
+      <div class="commentary">Score is mixed (63/100). In your favor: dry at both dawn and dusk, a high tide turning right near sunrise on a big tidal swing, ideal wind at dawn (8km/h), moderate by sunset (12km/h). Working against it: choppy, backing off the throttle territory. Best window looks like dawn, with the tide turning right around then too. (📈 data unavailable — score reflects what's known.)</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 8km/h WNW (ideal) · Sunset 12km/h N (moderate) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.84m (choppy) — 2/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~41min from sunrise · 2.2m range — 24/28 pts</div><div class="check unknown"><span class="icon">📈</span> – Pressure (no data) — no data</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 1:00am · High 7:00am · Low 1:00pm · High 8:00pm</div>
+      </div><div class="forecast-card NO-GO">
         
         
-      <div class="score">60<span class="max">/100</span></div>
-      <div class="status">MAYBE</div>
+      <div class="score">37<span class="max">/100</span></div>
+      <div class="status">NO-GO</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Thursday<br>2026-08-13</h3>
-      <div class="commentary">Score is mixed (60/100). In your favor: dry at both dawn and dusk, light, comfortable chop, moderate wind at dawn (15km/h), ideal by sunset (9km/h). Best window looks like sunset.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 15km/h WSW (moderate) · Sunset 9km/h ESE (ideal) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.34m (light) — 15/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~100min from sunrise · 2.6m range — 13/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
-      <div class="tide-times">🕐 Low 2:00am · High 8:00am · Low 2:00pm · High 9:00pm</div>
-      </div><div class="forecast-card MAYBE">
+      <div class="commentary">Score is low (37/100), mainly because rough, uncomfortable seas. A few bright spots though: dry at both dawn and dusk. Worth waiting for calmer wind or a firmer pressure trend before heading out.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 23km/h WSW (strong) · Sunset 13km/h ESE (moderate) — 9/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 1.24m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ High tide ~102min from sunrise · 2.2m range — 13/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 2:00am · High 8:00am · Low 2:00pm · High 8:00pm</div>
+      </div><div class="forecast-card NO-GO">
         
         
-      <div class="score">52<span class="max">/100</span></div>
-      <div class="status">MAYBE</div>
+      <div class="score">27<span class="max">/100</span></div>
+      <div class="status">NO-GO</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Friday<br>2026-08-14</h3>
-      <div class="commentary">Score is mixed (52/100). In your favor: dry at both dawn and dusk, ideal wind all day (around 10km/h). Working against it: tide timing doesn't line up with dawn or dusk on a big tidal swing. Best window looks like dawn.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 9km/h SW (ideal) · Sunset 10km/h SE (ideal) — 20/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.66m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ No tide turn within 2hrs of dawn/dusk · 2.5m range — 8/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
-      <div class="tide-times">🕐 Low 3:00am · High 9:00am · Low 3:00pm · High 9:00pm</div>
-      </div><div class="forecast-card MAYBE">
+      <div class="commentary">Score is low (27/100), mainly because tide timing doesn't line up with dawn or dusk on a big tidal swing, moderate wind at dawn (17km/h), strong by sunset (25km/h), rough, uncomfortable seas. A few bright spots though: dry at both dawn and dusk. Worth waiting for calmer wind or a firmer pressure trend before heading out.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 17km/h SSW (moderate) · Sunset 25km/h SSE (strong) — 4/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 1.90m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ No tide turn within 2hrs of dawn/dusk · 2.1m range — 8/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 3:00am · High 9:00am · Low 2:00pm · High 9:00pm</div>
+      </div><div class="forecast-card NO-GO">
         
         
-      <div class="score">59<span class="max">/100</span></div>
-      <div class="status">MAYBE</div>
+      <div class="score">28<span class="max">/100</span></div>
+      <div class="status">NO-GO</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Saturday<br>2026-08-15</h3>
-      <div class="commentary">Score is mixed (59/100). In your favor: dry at dawn and dusk, though ~2mm is expected through the middle of the day, ideal wind at dawn (12km/h), moderate by sunset (13km/h). Best window looks like dawn.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (ideal) · Sunset 13km/h SSE (moderate) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.70m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~86min from sunset · 2.3m range — 18/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~2mm expected mid-day — 7/7 pts</div>
+      <div class="commentary">Score is low (28/100), mainly because tide timing doesn't line up with dawn or dusk on a big tidal swing, strong wind all day (around 28km/h), rough, uncomfortable seas. A few bright spots though: dry at dawn and dusk, though ~4mm is expected through the middle of the day, pressure holding steady. Worth waiting for calmer wind or a firmer pressure trend before heading out.</div>
+      <div class="check fail"><span class="icon">💨</span> ✗ Dawn 28km/h S (strong) · Sunset 29km/h SSE (strong) — 0/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 1.92m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ No tide turn within 2hrs of dawn/dusk · 1.9m range — 7/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~4mm expected mid-day — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 3:00am · High 9:00am · Low 3:00pm · High 10:00pm</div>
+      </div><div class="forecast-card NO-GO">
+        
+        
+      <div class="score">37<span class="max">/100</span></div>
+      <div class="status">NO-GO</div>
+      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Sunday<br>2026-08-16</h3>
+      <div class="commentary">Score is low (37/100), mainly because strong wind all day (around 27km/h), rough, uncomfortable seas. A few bright spots though: dry at dawn and dusk, though ~4mm is expected through the middle of the day, pressure holding steady. Worth waiting for calmer wind or a firmer pressure trend before heading out.</div>
+      <div class="check fail"><span class="icon">💨</span> ✗ Dawn 27km/h S (strong) · Sunset 27km/h SE (strong) — 0/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 2.00m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~85min from sunset · 1.6m range — 16/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~4mm expected mid-day — 7/7 pts</div>
       <div class="tide-times">🕐 Low 4:00am · High 10:00am · Low 4:00pm · High 10:00pm</div>
       </div><div class="forecast-card MAYBE">
         
         
-      <div class="score">62<span class="max">/100</span></div>
-      <div class="status">MAYBE</div>
-      <h3 style="margin:12px 0 6px 0;font-size:1rem;">Sunday<br>2026-08-16</h3>
-      <div class="commentary">Score is mixed (62/100). In your favor: dry at both dawn and dusk, pressure holding steady. Best window looks like dawn.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (moderate) · Sunset 14km/h SSE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.72m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~87min from sunset · 1.9m range — 18/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
-      <div class="tide-times">🕐 Low 4:00am · High 10:00am · Low 4:00pm</div>
-      </div><div class="forecast-card MAYBE">
-        
-        
-      <div class="score">65<span class="max">/100</span></div>
+      <div class="score">40<span class="max">/100</span></div>
       <div class="status">MAYBE</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Monday<br>2026-08-17</h3>
-      <div class="commentary">Score is mixed (65/100). In your favor: dry at dawn and dusk, though ~6mm is expected through the middle of the day, a low tide turning right near sunset on a big tidal swing. Best window looks like dawn.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 14km/h SSW (moderate) · Sunset 12km/h SSE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.72m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~27min from sunset · 1.7m range — 27/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~6mm expected mid-day — 7/7 pts</div>
-      <div class="tide-times">🕐 Low 5:00am · High 11:00am · Low 5:00pm</div>
+      <div class="commentary">Score is mixed (40/100). In your favor: dry at dawn and dusk, though ~8mm is expected through the middle of the day, a low tide turning right near sunset. Working against it: strong wind all day (around 29km/h), rough, uncomfortable seas. Best window looks like dawn.</div>
+      <div class="check fail"><span class="icon">💨</span> ✗ Dawn 27km/h SSE (strong) · Sunset 31km/h SE (strong) — 0/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 2.38m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~26min from sunset · 1.4m range — 25/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure rising — 8/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~8mm expected mid-day — 7/7 pts</div>
+      <div class="tide-times">🕐 Low 4:00am · High 11:00am · Low 5:00pm</div>
       </div><div class="forecast-card MAYBE">
         
         
-      <div class="score">66<span class="max">/100</span></div>
+      <div class="score">45<span class="max">/100</span></div>
       <div class="status">MAYBE</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Tuesday<br>2026-08-18</h3>
-      <div class="commentary">Score is mixed (66/100). In your favor: dry at both dawn and dusk, a low tide turning right near sunset on a big tidal swing, pressure holding steady. Best window looks like dawn.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 14km/h S (moderate) · Sunset 14km/h SE (moderate) — 14/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.66m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~32min from sunset · 1.5m range — 22/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="commentary">Score is mixed (45/100). In your favor: dry at dawn and dusk, though ~5mm is expected through the middle of the day, a low tide turning right near sunset, pressure holding steady. Working against it: strong wind all day (around 21km/h), rough, uncomfortable seas. Best window looks like dawn.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 21km/h SE (strong) · Sunset 21km/h SE (strong) — 3/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 2.24m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~34min from sunset · 1.3m range — 21/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~5mm expected mid-day — 7/7 pts</div>
       <div class="tide-times">🕐 Low 5:00am · High 12:00pm · Low 6:00pm</div>
-      </div><div class="forecast-card GO">
+      </div><div class="forecast-card MAYBE">
         
         
-      <div class="score">73<span class="max">/100</span></div>
-      <div class="status">GO</div>
+      <div class="score">51<span class="max">/100</span></div>
+      <div class="status">MAYBE</div>
       <h3 style="margin:12px 0 6px 0;font-size:1rem;">Wednesday<br>2026-08-19</h3>
-      <div class="commentary">Score is strong (73/100) — dry at both dawn and dusk, a low tide turning right near sunrise on a big tidal swing, pressure holding steady. Best window looks like sunset.</div>
-      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 12km/h SSW (moderate) · Sunset 12km/h SE (ideal) — 17/25 pts</div><div class="check pass"><span class="icon">🌊</span> ✓ Wave 0.78m (moderate) — 9/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~14min from sunrise · 1.4m range — 26/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry — 7/7 pts</div>
+      <div class="commentary">Score is mixed (51/100). In your favor: dry at dawn and dusk, though ~6mm is expected through the middle of the day, a low tide turning right near sunrise, pressure holding steady. Working against it: strong wind at dawn (22km/h), moderate by sunset (17km/h), rough, uncomfortable seas. Best window looks like sunset.</div>
+      <div class="check pass"><span class="icon">💨</span> ✓ Dawn 22km/h SSE (strong) · Sunset 17km/h SE (moderate) — 6/25 pts</div><div class="check fail"><span class="icon">🌊</span> ✗ Wave 1.94m (rough) — 0/20 pts</div><div class="check pass"><span class="icon">🕐</span> ✓ Low tide ~13min from sunrise · 1.1m range — 24/28 pts</div><div class="check pass"><span class="icon">📈</span> ✓ Pressure stable — 14/20 pts</div><div class="check pass"><span class="icon">🌧️</span> ✓ Dawn &amp; dusk dry · ~6mm expected mid-day — 7/7 pts</div>
       <div class="tide-times">🕐 Low 6:00am · High 1:00pm · Low 7:00pm</div>
       </div></div>
 
   <div class="kpi-summary">
     <h2>How KPIs Are Calculated (max 100)</h2>
     <div class="kpi-item"><strong>Wind — 25 pts.</strong> Dawn and sunset wind speed are each scored, then averaged. Calmer = more points.</div>
-    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Tiered from &lt;0.3m (best) down to 0 pts above 1.2m.</div>
+    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Calibrated to a 0.5m comfort ceiling — full marks below that, dropping sharply from 0.5m, and 0 pts at 1.2m+. Not relevant off the open bay — see Preferences below to ignore it.</div>
     <div class="kpi-item"><strong>Tide — 28 pts.</strong> Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
     <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
-    <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Both windows dry: 7 pts · one wet: 4 pts · both wet: 0 pts. Rain expected mid-day is noted separately even when this scores well.</div>
+    <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
     <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
     <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
+
+    <h2 style="margin-top:22px;">Preferences</h2>
+    <label class="pref-toggle">
+      <input type="checkbox" id="rainPrefToggle">
+      I don't mind light rain
+    </label>
+    <label class="pref-toggle">
+      <input type="checkbox" id="wavePrefToggle">
+      I'm not on the open bay
+    </label>
   </div>
 </div>
 
@@ -280,7 +295,7 @@ const LOCATIONS = {
   pine:        { lat: -27.273, lon: 153.040, name: "Pine River" },
   woody:       { lat: -27.255, lon: 153.102, name: "Woody Point" },
   moreton:     { lat: -27.083, lon: 153.383, name: "Moreton Island" },
-  pumicestone: { lat: -27.015, lon: 153.100, name: "Pumicestone Passage – Bribie Island", distantGauge: true },
+  pumicestone: { lat: -27.015, lon: 153.100, name: "Pumicestone Passage", distantGauge: true },
   scarborough: { lat: -27.210, lon: 153.120, name: "Scarborough Reef" },
   mud:         { lat: -27.320, lon: 153.215, name: "Mud Island" },
   caboolture:  { lat: -27.128, lon: 153.063, name: "Caboolture River" }
@@ -454,15 +469,20 @@ function precipNear(weather, dayOffset, targetHour, windowHours) {
   return maxVal;
 }
 
-function rainAtDawnDusk(weather, dayOffset) {
-  const rainDawn = precipNear(weather, dayOffset, 6, 1);
-  const rainDusk = precipNear(weather, dayOffset, 18, 1);
-  const dailyTotal = weather?.daily?.precipitation_sum?.[dayOffset] ?? null;
+const RAIN_PREF_KEY = "fishGoNoGo.prefersLightRain";
+function prefersLightRain() {
+  try { return localStorage.getItem(RAIN_PREF_KEY) === "1"; } catch (e) { return false; }
+}
 
-  if (rainDawn == null && rainDusk == null) {
-    return { score: 0, label: "Rain (no data)", valid: false, blurb: null };
-  }
+const WAVE_PREF_KEY = "fishGoNoGo.ignoreWaveHeight";
+function ignoreWaveHeight() {
+  try { return localStorage.getItem(WAVE_PREF_KEY) === "1"; } catch (e) { return false; }
+}
 
+/* Default mode: dry scores best, any rain scores worse. Matches "I don't like
+   fishing in the rain" as a personal preference, regardless of what folklore says
+   about the bite. */
+function rainScoreAvoid(rainDawn, rainDusk, dailyTotal) {
   const dawnDry = (rainDawn ?? 0) < 1;
   const duskDry = (rainDusk ?? 0) < 1;
   const middayRain = dailyTotal != null && dailyTotal >= 2 && dawnDry && duskDry;
@@ -481,6 +501,47 @@ function rainAtDawnDusk(weather, dayOffset) {
   return { score: 0, label: "Rain at dawn & dusk", valid: true, blurb: "rain likely at both dawn and dusk" };
 }
 
+/* Alternate mode: light rain scores as well as (or better than) dry, since several
+   angling sources report light rain often improves the bite (breaks surface glare,
+   washes food in); heavy rain still scores low (safety, murky water). Opt-in only —
+   the default stays "avoid rain" above. */
+function rainTierFolklore(mm) {
+  if (mm == null) return null;
+  if (mm < 1) return { score: 6, tier: "dry" };
+  if (mm < 4) return { score: 7, tier: "light rain — can help the bite" };
+  if (mm < 10) return { score: 3, tier: "moderate rain" };
+  return { score: 0, tier: "heavy rain" };
+}
+function rainScoreFolklore(rainDawn, rainDusk) {
+  const dawnT = rainDawn != null ? rainTierFolklore(rainDawn) : null;
+  const duskT = rainDusk != null ? rainTierFolklore(rainDusk) : null;
+  const parts = [];
+  let sum = 0, count = 0;
+  if (dawnT) { sum += dawnT.score; count++; parts.push(`Dawn ${dawnT.tier}`); }
+  if (duskT) { sum += duskT.score; count++; parts.push(`Sunset ${duskT.tier}`); }
+  const avg = count ? Math.round(sum / count) : 0;
+  return {
+    score: avg,
+    label: parts.join(" · ") || "Rain (partial data)",
+    valid: true,
+    blurb: parts.length ? parts.join(" · ").toLowerCase() : null
+  };
+}
+
+function rainAtDawnDusk(weather, dayOffset) {
+  const rainDawn = precipNear(weather, dayOffset, 6, 1);
+  const rainDusk = precipNear(weather, dayOffset, 18, 1);
+  const dailyTotal = weather?.daily?.precipitation_sum?.[dayOffset] ?? null;
+
+  if (rainDawn == null && rainDusk == null) {
+    return { score: 0, label: "Rain (no data)", valid: false, blurb: null };
+  }
+
+  return prefersLightRain()
+    ? rainScoreFolklore(rainDawn, rainDusk)
+    : rainScoreAvoid(rainDawn, rainDusk, dailyTotal);
+}
+
 /* Wind: tiered 0-25, applied separately to dawn and dusk then averaged */
 function windPoints(speed) {
   if (speed < 8)  return { score: 25, tier: "ideal" };
@@ -491,12 +552,17 @@ function windPoints(speed) {
   return { score: 0, tier: "strong" };
 }
 
-/* Wave height: tiered 0-20 instead of a single 0.5m cutoff */
+/* Wave height: recalibrated around a 0.5m comfort ceiling (5m bowrider, 90hp —
+   lower freeboard forward than a deep-vee, and a hull that can't power through
+   chop with much margin). Below 0.5m stays close to full marks; crossing 0.5m
+   drops sharply rather than gently, since that's the actual personal ceiling
+   rather than just another gradient step. 1.2m+ still scores zero, in line with
+   this hull's operational limit. */
 function wavePoints(h) {
   if (h < 0.3) return { score: 20, tier: "calm" };
-  if (h < 0.5) return { score: 15, tier: "light" };
-  if (h < 0.8) return { score: 9,  tier: "moderate" };
-  if (h < 1.2) return { score: 4,  tier: "choppy" };
+  if (h < 0.5) return { score: 16, tier: "light" };
+  if (h < 0.8) return { score: 6,  tier: "marginal" };
+  if (h < 1.2) return { score: 2,  tier: "choppy" };
   return { score: 0, tier: "rough" };
 }
 
@@ -604,11 +670,13 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
   // WAVE
   const waveRaw = dayOffset === 0 ? marine?.hourly?.wave_height?.[0] : marine?.daily?.wave_height_max?.[dayOffset];
   let waveCheck;
-  if (waveRaw == null) {
+  if (ignoreWaveHeight()) {
+    waveCheck = { name: "Wave height", pass: false, score: 0, maxScore: 20, valid: false, icon: "🌊", blurb: null, unavailableText: "ignored — not on open bay" };
+  } else if (waveRaw == null) {
     waveCheck = { name: "Wave height (no data)", pass: false, score: 0, maxScore: 20, valid: false, icon: "🌊", blurb: null };
   } else {
     const wv = wavePoints(waveRaw);
-    const waveBlurbs = { calm: "flat, calm water", light: "light, comfortable chop", moderate: "some chop out there", choppy: "choppy conditions", rough: "rough, uncomfortable seas" };
+    const waveBlurbs = { calm: "flat, calm water", light: "light, comfortable chop", marginal: "at or above your comfort ceiling", choppy: "choppy, backing off the throttle territory", rough: "rough, uncomfortable seas" };
     waveCheck = { name: `Wave ${waveRaw.toFixed(2)}m (${wv.tier})`, pass: wv.score > 0, score: wv.score, maxScore: 20, valid: true, icon: "🌊", blurb: waveBlurbs[wv.tier] };
   }
 
@@ -711,7 +779,7 @@ function renderChecklist(checks) {
   return checks.map(c => {
     const tick = c.valid ? (c.pass ? "✓" : "✗") : "–";
     const cls = !c.valid ? "unknown" : (c.pass ? "pass" : "fail");
-    const ptsTxt = c.valid ? `${c.score}/${c.maxScore} pts` : "no data";
+    const ptsTxt = c.valid ? `${c.score}/${c.maxScore} pts` : (c.unavailableText || "no data");
     return `<div class="check ${cls}"><span class="icon">${c.icon}</span> ${tick} ${c.name} — ${ptsTxt}</div>`;
   }).join("");
 }
@@ -866,6 +934,14 @@ async function load() {
   } catch (e) { /* storage unavailable, ignore */ }
 })();
 
+(function initRainPref() {
+  document.getElementById("rainPrefToggle").checked = prefersLightRain();
+})();
+
+(function initWavePref() {
+  document.getElementById("wavePrefToggle").checked = ignoreWaveHeight();
+})();
+
 async function searchLocation() {
   const input = document.getElementById("locationSearchInput");
   const status = document.getElementById("searchStatus");
@@ -906,6 +982,14 @@ document.getElementById("locationSearchInput").addEventListener("keydown", (e) =
   if (e.key === "Enter") { e.preventDefault(); searchLocation(); }
 });
 document.getElementById("locationSelect").addEventListener("change", load);
+document.getElementById("rainPrefToggle").addEventListener("change", (e) => {
+  try { localStorage.setItem(RAIN_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
+  load();
+});
+document.getElementById("wavePrefToggle").addEventListener("change", (e) => {
+  try { localStorage.setItem(WAVE_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
+  load();
+});
 load();
 </script>
 
