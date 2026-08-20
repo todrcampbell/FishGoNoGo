@@ -895,20 +895,31 @@ function scoreRationale(checks, status, score, extra) {
     tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
   }
 
+  // The score number and GO/MAYBE/NO-GO status are already shown as a large stat and
+  // a status label right above this text — leading with "Score is strong (71/100)"
+  // just repeated both. Every branch below now opens directly with the reasoning
+  // instead, so nothing in the commentary restates what the card already shows.
   if (status === "GO") {
-    let text = `Score is strong (${score}/100) — ${goodBits.join(", ") || "conditions line up well across the board"}.`;
+    const lead = goodBits.join(", ") || "conditions line up well across the board";
+    let text = `${capitalize(lead)}.`;
     text += badBits.length ? ` Only real drag is ${badBits.join(" and ")}.` : "";
     return text + tip + missingNote;
   }
   if (status === "MAYBE") {
-    let text = `Score is mixed (${score}/100).`;
-    text += goodBits.length ? ` In your favor: ${goodBits.join(", ")}.` : "";
-    text += badBits.length ? ` Working against it: ${badBits.join(", ")}.` : "";
+    const parts = [];
+    if (goodBits.length) parts.push(`In your favor: ${goodBits.join(", ")}.`);
+    if (badBits.length) parts.push(`Working against it: ${badBits.join(", ")}.`);
+    const text = parts.length ? parts.join(" ") : "No single factor stands out either way.";
     return text + tip + missingNote;
   }
-  let text = `Score is low (${score}/100), mainly because ${badBits.join(", ") || "several factors are working against a session"}.`;
+  const lead = badBits.join(", ") || "several factors are working against a session";
+  let text = `Mainly because ${lead}.`;
   text += goodBits.length ? ` A few bright spots though: ${goodBits.join(", ")}.` : "";
   return text + tip + missingNote;
+}
+
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 function renderChecklist(checks) {
@@ -1305,11 +1316,22 @@ document.getElementById("planCrossingBtn").addEventListener("click", checkCrossi
    "Today", stale everything. Re-running load() whenever the page becomes visible
    again fixes that without touching any native Android code. Both listeners are
    included since different WebView/Android versions fire one or the other on resume;
-   a harmless double-fetch on resume is a fine trade for reliably catching both. */
+   a harmless double-fetch on resume is a fine trade for reliably catching both.
+
+   IMPORTANT: the very first call must go through this same guarded function too, not
+   a separate raw load() call. On some mobile WebViews, "focus"/"pageshow" can fire
+   synchronously as part of the initial page becoming active — before the last line
+   of this script even runs. With a separate unguarded initial call, that early event
+   and the script's own startup call could both fire load() nearly simultaneously,
+   two overlapping fetches racing on the same cardsGrid DOM — which can leave the
+   page stuck showing the loading skeleton with no cards if one call's reset clobbers
+   the other's in-progress render. Routing everything through reloadIfStale() means
+   there's only ever one gate deciding whether load() runs, no matter which trigger
+   fires first. */
 let lastLoadAt = 0;
 function reloadIfStale() {
   const now = Date.now();
-  if (now - lastLoadAt < 2000) return; // guard against the two listeners double-firing
+  if (now - lastLoadAt < 2000) return; // guard against multiple triggers firing together
   lastLoadAt = now;
   load();
 }
@@ -1319,8 +1341,7 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pageshow", () => reloadIfStale());
 window.addEventListener("focus", () => reloadIfStale());
 
-lastLoadAt = Date.now();
-load();
+reloadIfStale();
 </script>
 </body>
 </html>
