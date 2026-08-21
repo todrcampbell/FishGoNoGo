@@ -170,7 +170,22 @@
     body { padding: 12px; padding-top: calc(12px + env(safe-area-inset-top, 32px)); }
     h1 { font-size: 1.3rem; }
     .card { max-width: 100%; width: 100%; }
-    .forecast-card { width: 78vw; min-width: 78vw; }
+    /* Was 78vw. Check rows are full sentences ("Dawn 7km/h SSW (ideal), gusts to
+       14km/h..."), and at 78vw those wrapped to 2-3 lines each, which is what pushed
+       busy cards (missing data + safe-until banner + a 4-turn tide day) past one
+       screen's height. Sized off the row's own width (100%) rather than vw, because
+       vw measures the full device width while the row itself is already inset by
+       body's side padding -- a vw-based width was quietly eating into that padding
+       and shrinking the room actually available. Tested against a busy card
+       (Playwright, 390x844 viewport): the checklist text stops wrapping an extra
+       line once the card crosses ~342px, saving ~19px of height -- calc(100% - 24px)
+       lands just past that point while still leaving ~12px of the next card visible
+       as a swipe hint (plus the row's 14px gap, so ~26px of visual separation). Note
+       this alone doesn't get the busiest cards (safe-until banner + missing data +
+       a 4-turn tide day) down to one screen -- the sparkline chart and the 5-row
+       checklist are the bigger height contributors; widening only recovers what
+       narrow-column text wrapping was costing. */
+    .forecast-card { width: calc(100% - 24px); min-width: calc(100% - 24px); }
     .section-title { font-size: 1.15rem; }
     select, .search-row, input[type="time"], .action-btn { max-width: 100%; }
     .search-row { flex-direction: column; }
@@ -210,7 +225,7 @@
   <div class="kpi-summary">
     <h2>How KPIs Are Calculated (max 100)</h2>
     <div class="kpi-item"><strong>Wind — 25 pts.</strong> Dawn and sunset wind speed are each scored, then averaged. Calmer = more points. Gusts are shown alongside for reference but aren't scored — the "safe until" note below can flag a gust spike separately.</div>
-    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Calibrated to a 0.5m comfort ceiling — full marks below that, dropping sharply from 0.5m, and 0 pts at 1.2m+. Not relevant off the open bay — see Preferences below to ignore it.</div>
+    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — see Preferences below to ignore it.</div>
     <div class="kpi-item"><strong>Tide — 28 pts.</strong> Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
     <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
     <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
@@ -338,7 +353,20 @@ function minutesToClock(mins) {
    "I don't mind light rain" preference below — that toggle is about whether rain
    helps or hurts the bite, not about whether you're going to get rained on. */
 const WIND_COMFORT_KMH = 20;
-const WAVE_COMFORT_M = 0.5;
+/* Wave comfort ceiling and "turn back" limit, both derived from the boat's own
+   length rather than picked arbitrarily. Recreational boating guidance commonly
+   uses wave height at ~30% of boat length as a turn-back threshold — see e.g.
+   https://deckee.com/blog/what-is-a-good-swell-for-boating ("If a wave's height
+   is 30 percent of the boat's length, it's a pretty good idea to turn back").
+   For this 5m boat that's 1.5m. Comfort is set at half that — meaningfully calmer
+   than the point you'd reconsider being out there at all, not sitting right at it.
+   Previously the comfort ceiling was a flat 0.5m with no relationship to the boat's
+   actual length or to any turn-back limit; real on-the-water conditions (0.5m dawn /
+   0.4m dusk, which felt fine) scored a harsh "marginal" 6/20 under that number,
+   which is what prompted anchoring both to something less arbitrary. */
+const BOAT_LENGTH_M = 5;
+const WAVE_TURNBACK_M = BOAT_LENGTH_M * 0.30; // 1.5m — the "reconsider being out here" line
+const WAVE_COMFORT_M = WAVE_TURNBACK_M / 2;   // 0.75m — comfortably below that line, not at it
 const GUST_COMFORT_KMH = 30; // gusts run naturally higher than sustained wind — a judgment-call default, adjustable
 const RAIN_COMFORT_MM = 1;
 
@@ -641,17 +669,17 @@ function windPoints(speed) {
   return { score: 0, tier: "strong" };
 }
 
-/* Wave height: recalibrated around a 0.5m comfort ceiling (5m bowrider, 90hp —
-   lower freeboard forward than a deep-vee, and a hull that can't power through
-   chop with much margin). Below 0.5m stays close to full marks; crossing 0.5m
-   drops sharply rather than gently, since that's the actual personal ceiling
-   rather than just another gradient step. 1.2m+ still scores zero, in line with
-   this hull's operational limit. */
+/* Wave height tiers, stepped between the two anchors above (WAVE_COMFORT_M and
+   WAVE_TURNBACK_M) rather than hardcoded numbers — so if the boat ever changes and
+   BOAT_LENGTH_M gets updated, these move with it instead of drifting out of sync.
+   Full marks well below comfort, tapering steadily rather than one steep cliff right
+   at the ceiling, down to zero at the turn-back line. */
 function wavePoints(h) {
-  if (h < 0.3) return { score: 20, tier: "calm" };
-  if (h < 0.5) return { score: 16, tier: "light" };
-  if (h < 0.8) return { score: 6,  tier: "marginal" };
-  if (h < 1.2) return { score: 2,  tier: "choppy" };
+  if (h < WAVE_COMFORT_M * 0.4)   return { score: 20, tier: "calm" };
+  if (h < WAVE_COMFORT_M * 0.67)  return { score: 18, tier: "light" };
+  if (h < WAVE_COMFORT_M)         return { score: 14, tier: "comfortable" };
+  if (h < WAVE_TURNBACK_M * 0.67) return { score: 8,  tier: "marginal" };
+  if (h < WAVE_TURNBACK_M)        return { score: 3,  tier: "choppy" };
   return { score: 0, tier: "rough" };
 }
 
@@ -774,7 +802,7 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
   const waveDuskRaw = waveDuskIdx !== null ? marine?.hourly?.wave_height?.[waveDuskIdx] : null;
 
   let waveCheck;
-  const waveBlurbs = { calm: "flat, calm water", light: "light, comfortable chop", marginal: "at or above your comfort ceiling", choppy: "choppy, backing off the throttle territory", rough: "rough, uncomfortable seas" };
+  const waveBlurbs = { calm: "flat, calm water", light: "light, comfortable chop", comfortable: "still comfortable, easing toward your ceiling", marginal: "at or above your comfort ceiling", choppy: "choppy, backing off the throttle territory", rough: "rough, uncomfortable seas" };
   if (ignoreWaveHeight()) {
     waveCheck = { name: "Wave height", pass: false, score: 0, maxScore: 20, valid: false, icon: "🌊", blurb: null, unavailableText: "ignored — not on open bay" };
   } else if (waveDawnRaw == null && waveDuskRaw == null) {
