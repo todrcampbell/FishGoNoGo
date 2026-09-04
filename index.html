@@ -735,6 +735,23 @@ async function loadWeather(lat, lon) {
 }
 
 
+/* Splits the same 5 checks into two independent read-outs: "boating" (is it safe/
+   comfortable to be on the water — wind, wave, rain) and "fishing" (are the fish
+   likely to bite — tide timing, pressure trend). The single overall score already
+   blends both, which is exactly why a flat-calm, dry, ideal-wind day can still land
+   on MAYBE if the tide isn't turning near dawn/dusk and pressure's climbing — good
+   boating, so-so fishing, one number hiding that split. Same GO/MAYBE/NO-GO
+   thresholds (70/40) as the overall score, applied to just that subset's own points. */
+function bandFor(checksSubset) {
+  const valid = checksSubset.filter(c => c.valid);
+  if (!valid.length) return { status: "NO-DATA", pct: null };
+  const raw = valid.reduce((a, c) => a + c.score, 0);
+  const max = valid.reduce((a, c) => a + c.maxScore, 0);
+  const pct = max > 0 ? Math.round((raw / max) * 100) : 0;
+  const status = max === 0 ? "NO-DATA" : (pct >= 70 ? "GO" : pct >= 40 ? "MAYBE" : "NO-GO");
+  return { status, pct };
+}
+
 /* Computes one day's full score. Shared by "today" and each of the next 7 days
    so both use identical logic (previously they diverged, especially for pressure). */
 function computeDayScore(weather, marine, qldPoints, dayOffset) {
@@ -884,6 +901,9 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
   const score = rawMax > 0 ? Math.round((rawScore / rawMax) * 100) : 0;
   const status = rawMax === 0 ? "NO-DATA" : (score >= 70 ? "GO" : score >= 40 ? "MAYBE" : "NO-GO");
 
+  const boatingBand = bandFor([windCheck, waveCheck, rainCheck]);
+  const fishingBand = bandFor([tideCheck, pressCheck]);
+
   const daySeries = getDayHourlySeries(weather, marine, dayOffset);
   const safeUntil = computeSafeUntil(daySeries);
   const windSparkSVG = renderComfortSparkline(daySeries, safeUntil?.metric);
@@ -891,17 +911,27 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
   const tempMax = weather?.daily?.temperature_2m_max?.[dayOffset];
   const tempMin = weather?.daily?.temperature_2m_min?.[dayOffset];
 
-  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin };
+  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin, boatingBand, fishingBand };
 }
 
-function scoreRationale(checks, status, score, extra) {
-  if (status === "NO-DATA") return "Not enough data was available to calculate a score for this day.";
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
 
+function joinNatural(list) {
+  if (!list.length) return "";
+  if (list.length === 1) return list[0];
+  if (list.length === 2) return `${list[0]} and ${list[1]}`;
+  return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
+}
+
+/* Original single-track commentary, kept as a fallback for the rare day where an
+   entire dimension (every boating check, or every fishing check) is missing data --
+   too little to confidently label that side "good"/"fair"/"rough" at all. */
+function scoreRationaleLegacy(checks, status, score, extra) {
   const valid = checks.filter(c => c.valid);
   const missing = checks.filter(c => !c.valid);
 
-  // Rank by score-as-a-fraction-of-max, not just score>0 — a "strong wind" check still
-  // scores a few points, so a plain pass/fail split was miscounting it as a positive.
   const ranked = valid
     .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0 }))
     .sort((a, b) => b.ratio - a.ratio);
@@ -923,10 +953,6 @@ function scoreRationale(checks, status, score, extra) {
     tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
   }
 
-  // The score number and GO/MAYBE/NO-GO status are already shown as a large stat and
-  // a status label right above this text — leading with "Score is strong (71/100)"
-  // just repeated both. Every branch below now opens directly with the reasoning
-  // instead, so nothing in the commentary restates what the card already shows.
   if (status === "GO") {
     const lead = goodBits.join(", ") || "conditions line up well across the board";
     let text = `${capitalize(lead)}.`;
@@ -946,8 +972,56 @@ function scoreRationale(checks, status, score, extra) {
   return text + tip + missingNote;
 }
 
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const BOATING_ADJ = { "GO": "Good", "MAYBE": "Fair", "NO-GO": "Rough" };
+const FISHING_ADJ = { "GO": "good", "MAYBE": "fair", "NO-GO": "tough" };
+
+/* Leads with a direct "Good boating, tough fishing" style pairing, since boating
+   comfort/safety (wind, wave, rain) and bite likelihood (tide timing, pressure
+   trend) are genuinely different questions that the single overall score blends
+   into one number -- a flat-calm, dry, ideal-wind day can still land on MAYBE
+   purely because the tide isn't turning near dawn/dusk, which this makes explicit
+   instead of hiding it behind one score.
+
+   The follow-up sentence ranks every check by points actually lost (maxScore -
+   score), not just whether it crosses an old all-or-nothing cutoff -- a check
+   sitting at 40% of its max was previously invisible in this commentary even
+   though it was costing more points than ones that did get mentioned. */
+function scoreRationale(checks, status, score, extra) {
+  if (status === "NO-DATA") return "Not enough data was available to calculate a score for this day.";
+
+  const { boatingBand, fishingBand } = extra || {};
+
+  const missing = checks.filter(c => !c.valid);
+  const missingNote = missing.length
+    ? ` (${missing.map(c => c.icon).join(" ")} data unavailable — score reflects what's known.)`
+    : "";
+
+  let tip = "";
+  if ((status === "GO" || status === "MAYBE") && extra?.bestWindow) {
+    tip = ` Best window looks like ${extra.bestWindow}${extra.tideAgrees ? ", with the tide turning right around then too" : ""}.`;
+  } else if (status === "NO-GO") {
+    tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
+  }
+
+  if (!boatingBand || !fishingBand || boatingBand.status === "NO-DATA" || fishingBand.status === "NO-DATA") {
+    return scoreRationaleLegacy(checks, status, score, extra);
+  }
+
+  const opener = `${BOATING_ADJ[boatingBand.status]} boating, ${FISHING_ADJ[fishingBand.status]} fishing.`;
+
+  const valid = checks.filter(c => c.valid && c.blurb);
+  const ranked = valid
+    .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0, lost: c.maxScore - c.score }))
+    .sort((a, b) => b.lost - a.lost);
+
+  const drags = ranked.filter(c => c.ratio < 0.65).slice(0, 2);
+  const strong = ranked.filter(c => c.ratio >= 0.65).sort((a, b) => b.ratio - a.ratio);
+
+  const body = drags.length
+    ? ` What's holding it back is ${joinNatural(drags.map(c => c.blurb))}.`
+    : (strong.length ? ` Nothing much holding this one back — ${joinNatural(strong.slice(0, 3).map(c => c.blurb))}.` : "");
+
+  return opener + body + tip + missingNote;
 }
 
 function renderChecklist(checks) {
@@ -960,7 +1034,7 @@ function renderChecklist(checks) {
 }
 
 function renderCard(dateStr, result, extraClass, headingHTML) {
-  const { checks, score, status, bestWindow, tideAgrees, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin } = result;
+  const { checks, score, status, bestWindow, tideAgrees, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, boatingBand, fishingBand } = result;
   const tideTimesHTML = tideTimes ? `<div class="tide-times">🕐 ${tideTimes}</div>` : "";
   const tempHTML = (tempMax != null || tempMin != null)
     ? `<div class="temp-range">${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}</div>`
@@ -973,7 +1047,7 @@ function renderCard(dateStr, result, extraClass, headingHTML) {
       <div class="status">${status}</div>
       ${headingHTML}
       ${tempHTML}
-      <div class="commentary">${scoreRationale(checks, status, score, { bestWindow, tideAgrees })}</div>
+      <div class="commentary">${scoreRationale(checks, status, score, { bestWindow, tideAgrees, boatingBand, fishingBand })}</div>
       ${safeUntilHTML}
       ${renderChecklist(checks)}
       ${tideTimesHTML}`;
