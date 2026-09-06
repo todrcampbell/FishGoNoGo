@@ -257,7 +257,7 @@
     <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
     <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
     <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
-    <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, grunter, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; mangrove jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
+    <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
     <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
 
     <h2 style="margin-top:22px;">Preferences</h2>
@@ -980,10 +980,15 @@ function joinNatural(list) {
    species_seasons_tides.md in the fish-coach skill (general web research,
    not independently verified the way Tod's own bream/flathead rule is),
    narrowed to the species list agreed with Tod 2026-09. Note: that source
-   table flags both grunter and threadfin salmon as Central/North Qld
-   (Zilzie-area) species rather than confirmed Moreton Bay ones -- included
-   here because Tod asked for them in the "safe everywhere" list, but worth
-   re-checking against what actually turns up at these seven spots. */
+   table flags threadfin salmon as a Central/North Qld (Zilzie-area) species
+   rather than a confirmed Moreton Bay one -- included here because Tod
+   asked for it in the "safe everywhere" list, but worth re-checking against
+   what actually turns up at these seven spots. Grunter was dropped entirely
+   2026-09 -- same Central/North Qld flag applied to it too, and its tide
+   rule stayed genuinely contested across two rounds of source-checking
+   (low tide vs. high tide, roughly split) with no way to settle it, so
+   between the flagged regional mismatch, the unsettled rule, and Tod
+   rarely targeting it anyway, it wasn't worth keeping. */
 
 // Wraps a minutes-since-midnight value -- which can go negative or past 1440
 // once a species window is offset from a tide turn near midnight -- back
@@ -1125,14 +1130,6 @@ const SPECIES = [
       return { label: `${minutesToClock(start)}–${minutesToClock(end)}`, sortMin: start };
     } },
 
-  { key: "grunter", name: "Grunter", reef: false, season: null,
-    build: (turns, sr, ss) => {
-      const p = pickTurn(turns, "low", sr, ss);
-      if (!p) return null;
-      const start = wrapMinutes(p.turn.minutes - 120), end = wrapMinutes(p.turn.minutes + 120);
-      return { label: `${minutesToClock(start)}–${minutesToClock(end)}`, sortMin: start };
-    } },
-
   { key: "mangrovejack", name: "Jack", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4, 5], // shortened from "Mangrove Jack" 2026-09 to fit the card better
     build: (turns, sr, ss) => {
       // Open-ended, not a fixed window: every source checked (Black Magic,
@@ -1141,6 +1138,18 @@ const SPECIES = [
       // hard 3-hour cutoff here was an unsupported invention (checked
       // 2026-09) -- shows just a start time instead.
       if (ss == null) return null;
+      // Falling tide only, per Tod's original rule and confirmed by two
+      // sources (Daiwa: "I like to fish the run-out tide... so does the
+      // bait they're chasing"; Black Magic: "the run-out tide is ideal").
+      // That check got dropped by accident during the times-only rewrite
+      // and only "after dark" survived -- restored 2026-09 (Tod's call,
+      // option A: hide the line rather than show it with a tide-state tag).
+      // Finds the turn immediately before dusk; a high there means the
+      // tide is falling at dusk, a low means it's rising. No turn found
+      // before dusk in today's data -> not enough info, so the line is
+      // left off rather than guessed at.
+      const before = turns.filter(t => t.minutes <= ss).sort((a, b) => b.minutes - a.minutes)[0];
+      if (!before || before.type !== "high") return null;
       return { label: `From ${minutesToClock(ss)}`, sortMin: ss };
     } },
 
