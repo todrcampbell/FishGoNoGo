@@ -118,6 +118,7 @@
   .status-pill.NO-DATA { background: rgba(156, 163, 175, 0.16); color: #9ca3af; }
   .scoring-note { font-size: 12px; color: #e5e7eb; margin: 8px 0 12px 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.4; }
   .commentary { font-size: 13px; margin: 10px 0 12px 0; line-height: 1.45; color: #e5e7eb; }
+  .commentary .species-name { font-weight: 700; }
   .check { margin: 5px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 6px; }
   .tide-times { font-size: 12px; color: #e5e7eb; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
   .temp-range { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
@@ -241,6 +242,7 @@
     <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
     <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
     <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
+    <div class="kpi-item"><strong>Species timing</strong> — not scored, just timing guidance below the score. Bream keys to the last two hours of the run-in through the top of the tide and the first hour of the run-out on a high turn; flathead mirrors that around a low turn. Whiting, jew, grunter, threadfin, snapper, sweetlip and trevally are also tide-driven, each keyed to the nearest tide turn to dawn or dusk. Tailor, dart, mangrove jack and squid aren't tide-anchored at all — they run on dawn, dusk or after-dark light instead, so they show without a tide-turn time.</div>
     <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
 
     <h2 style="margin-top:22px;">Preferences</h2>
@@ -992,36 +994,37 @@ function pickTurn(turns, type, sunRiseMin, sunSetMin) {
 }
 
 /* Bream: per Tod, the last two hours of the run-in through the top of the
-   tide and the first hour of the run-out -- anchored on a HIGH turn. */
+   tide and the first hour of the run-out -- anchored on a HIGH turn. Kept
+   to a bare time window: the rationale and the tide-turn clock time both
+   already live in the tide-times footer and the "How KPIs Are Calculated"
+   section, so repeating them here was just noise (Tod, 2026-09). */
 function breamWindow(turns, sunRiseMin, sunSetMin) {
   const p = pickTurn(turns, "high", sunRiseMin, sunSetMin);
-  if (!p) return "Bream: no high tide turn to work with today.";
+  if (!p) return `<span class="species-name">Bream</span>: no high tide turn to work with today.`;
   const start = wrapMinutes(p.turn.minutes - 120);
   const end = wrapMinutes(p.turn.minutes + 60);
-  return `Bream best ${minutesToClock(start)}–${minutesToClock(end)} — the last two hours of the run-in through the ${minutesToClock(p.turn.minutes)} high and the first hour of the run-out.`;
+  return `<span class="species-name">Bream</span> best ${minutesToClock(start)}–${minutesToClock(end)}.`;
 }
 
 /* Flathead: per Tod, the mirror image of bream's rule -- the last two hours
    of the falling tide through the first hour of the low -- anchored on a LOW
-   turn instead. */
+   turn instead. Same bare-format treatment as bream, above. */
 function flatheadWindow(turns, sunRiseMin, sunSetMin) {
   const p = pickTurn(turns, "low", sunRiseMin, sunSetMin);
-  if (!p) return "Flathead: no low tide turn to work with today.";
+  if (!p) return `<span class="species-name">Flathead</span>: no low tide turn to work with today.`;
   const start = wrapMinutes(p.turn.minutes - 120);
   const end = wrapMinutes(p.turn.minutes + 60);
-  return `Flathead best ${minutesToClock(start)}–${minutesToClock(end)}, the last two hours of the falling tide into the top of the ${minutesToClock(p.turn.minutes)} low.`;
+  return `<span class="species-name">Flathead</span> best ${minutesToClock(start)}–${minutesToClock(end)}.`;
 }
 
 // Many species share the same placeholder rank (see SPECIES below) when their
 // bite isn't clock-driven enough to rank by dawn/dusk proximity. Left alone,
-// a plain sort is stable and ties would always resolve to whichever species
-// happens to be listed first in SPECIES -- so the exact same species would
-// win almost every day, and snapper (declared near the end of the list)
-// would rarely surface even when it's genuinely the best-ranked match, which
-// would make the closure warning nearly untestable in real use. This adds a
-// small (<1) deterministic offset from today's date and the species key, so
-// ties still resolve consistently for a given day/species but rotate from
-// day to day instead of always favouring declaration order.
+// a plain sort is stable and ties would always resolve in the exact same
+// order -- whichever species happens to be listed first in SPECIES always
+// reads first in the sentence. This adds a small (<1) deterministic offset
+// from today's date and the species key, so ties still resolve consistently
+// for a given day/species but the order rotates day to day instead of
+// always favouring declaration order.
 function dayJitter(dateStr, key) {
   let h = 0;
   const s = dateStr + key;
@@ -1040,93 +1043,74 @@ function isSnapperClosed(dateStr) {
 
 /* Species beyond bream and flathead. `season` is a list of eligible months
    (1-12), or null for year-round. `reef` gates a species to REEF_PRESETS.
-   `build` returns { text, rank } or null when today's tide data can't
-   support it. `rank` is minutes-from-dawn/dusk for tide-anchored species
-   (lower wins) or a fixed placeholder for species whose bite isn't
-   clock-driven, so a well-timed anchored species outranks a generic
-   condition-only note. Source: species_seasons_tides.md in the fish-coach
-   skill -- see that file's per-row notes for how confident each entry is. */
+   `category` is "tide" for species whose bite keys off a tide turn (grouped
+   into one flowing sentence together) or "light" for species that run on
+   dawn/dusk/after-dark instead (grouped into a second, shorter sentence) --
+   see buildSpeciesCommentary below. `build` returns a short clause (not a
+   full sentence -- it gets joined with the rest of its category) as
+   { text, rank }, or null when today's tide data can't support it. `rank`
+   is minutes-from-dawn/dusk for tide-anchored species (lower wins) or a
+   fixed placeholder for species whose bite isn't clock-driven, so a
+   well-timed anchored species surfaces first in its sentence. Trimmed
+   2026-09 to the species Tod actually targets, per his review of the full
+   list -- mullet, luderick, mud crab, blue swimmer crab, Spanish mackerel,
+   cobia and longtail/mac tuna were dropped entirely, not just hidden.
+   Source: species_seasons_tides.md in the fish-coach skill -- see that
+   file's per-row notes for how confident each entry is. */
 const SPECIES = [
-  { key: "whiting", name: "Whiting", reef: false, season: null,
-    build: () => ({ text: "Whiting are worth a look as the tide eases toward the low.", rank: 90 }) },
+  { key: "whiting", name: "Whiting", reef: false, season: null, category: "tide",
+    build: () => ({ text: `<span class="species-name">Whiting</span> ease onto the low`, rank: 90 }) },
 
-  { key: "trevally", name: "Trevally", reef: false, season: [10, 11],
-    build: () => ({ text: "Trevally are worth a cast on the run-out, as bait gets swept off the flats.", rank: 90 }) },
+  { key: "trevally", name: "Trevally", reef: false, season: [10, 11], category: "tide",
+    build: () => ({ text: `<span class="species-name">Trevally</span> follow the run-out as bait clears the flats`, rank: 90 }) },
 
-  { key: "jew", name: "Jew", reef: false, season: [7, 8, 9, 10],
+  { key: "jew", name: "Jew", reef: false, season: [7, 8, 9, 10], category: "tide",
     build: (turns, sr, ss) => {
       const p = pickTurn(turns, "high", sr, ss);
       if (!p) return null;
-      const start = wrapMinutes(p.turn.minutes - 60), end = wrapMinutes(p.turn.minutes + 60);
-      return { text: `Jew fish well ${minutesToClock(start)}–${minutesToClock(end)}, either side of the ${minutesToClock(p.turn.minutes)} high, in low light.`, rank: p.diff };
+      return { text: `<span class="species-name">Jew</span> work the ${minutesToClock(p.turn.minutes)} high in low light`, rank: p.diff };
     } },
 
-  { key: "tailor", name: "Tailor", reef: false, season: [6, 7, 8, 9],
-    build: () => ({ text: "Tailor are worth a look right on dawn or dusk, in an active bait wash — tide stage matters less than the light.", rank: 90 }) },
+  { key: "tailor", name: "Tailor", reef: false, season: [6, 7, 8, 9], category: "light",
+    build: () => ({ text: `<span class="species-name">Tailor</span> bite dawn or dusk`, rank: 90 }) },
 
-  { key: "dart", name: "Dart", reef: false, season: [10, 11, 12, 1, 2, 3, 4],
-    build: (turns, sr, ss) => {
-      const p = pickTurn(turns, "high", sr, ss);
-      if (!p) return null;
-      const start = wrapMinutes(p.turn.minutes - 120);
-      return { text: `Dart are worth a look ${minutesToClock(start)}–${minutesToClock(p.turn.minutes)}, the last two hours of the incoming tide before the ${minutesToClock(p.turn.minutes)} high.`, rank: p.diff };
-    } },
+  { key: "dart", name: "Dart", reef: false, season: [10, 11, 12, 1, 2, 3, 4], category: "light",
+    build: () => ({ text: `<span class="species-name">Dart</span> are active in the surf most of the day`, rank: 90 }) },
 
-  { key: "grunter", name: "Grunter", reef: false, season: null,
+  { key: "grunter", name: "Grunter", reef: false, season: null, category: "tide",
     build: (turns, sr, ss) => {
       const p = pickTurn(turns, "low", sr, ss);
       if (!p) return null;
-      const start = wrapMinutes(p.turn.minutes - 120), end = wrapMinutes(p.turn.minutes + 120);
-      return { text: `Grunter are worth a look ${minutesToClock(start)}–${minutesToClock(end)}, straddling the ${minutesToClock(p.turn.minutes)} low — best after dark.`, rank: p.diff };
+      return { text: `<span class="species-name">Grunter</span> sit around the ${minutesToClock(p.turn.minutes)} low, best after dark`, rank: p.diff };
     } },
 
-  { key: "mangrovejack", name: "Mangrove Jack", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4, 5],
-    build: () => ({ text: "Mangrove jack are worth a look on the falling tide after dark, tight to structure.", rank: 90 }) },
+  { key: "mangrovejack", name: "Mangrove Jack", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4, 5], category: "light",
+    build: () => ({ text: `<span class="species-name">Mangrove Jack</span> try after dark`, rank: 90 }) },
 
-  { key: "mullet", name: "Mullet", reef: false, season: [4, 5, 6],
-    build: () => ({ text: "The autumn mullet run is on — worth a look on a rising tide around dawn.", rank: 92 }) },
+  { key: "squid", name: "Squid", reef: false, season: null, category: "light",
+    build: () => ({ text: `<span class="species-name">Squid</span> turn up after dark around jetty and foreshore lights`, rank: 91 }) },
 
-  { key: "luderick", name: "Luderick", reef: false, season: null,
-    build: (turns, sr, ss) => {
-      const p = pickTurn(turns, "high", sr, ss);
-      if (!p) return null;
-      const start = wrapMinutes(p.turn.minutes - 90);
-      return { text: `Luderick are worth a look ${minutesToClock(start)}–${minutesToClock(p.turn.minutes)}, working up to the top of the ${minutesToClock(p.turn.minutes)} high.`, rank: p.diff };
-    } },
+  { key: "threadfin", name: "Threadfin Salmon", reef: false, season: [3, 4, 5, 9, 10, 11], category: "tide",
+    build: () => ({ text: `<span class="species-name">Threadfin</span> prefer the smaller neap tides over a big push`, rank: 92 }) },
 
-  { key: "squid", name: "Squid", reef: false, season: null,
-    build: () => ({ text: "Squid are worth a look after dark on moving water, working the edges of jetty or foreshore lights.", rank: 91 }) },
+  { key: "snapper", name: "Snapper", reef: true, season: null, category: "tide",
+    build: () => ({ text: `<span class="species-name">Snapper</span> take the run-in over structure`, rank: 90 }) },
 
-  { key: "mudcrab", name: "Mud Crab", reef: false, season: [10, 11, 12, 1, 2, 3],
-    build: () => ({ text: "Mud crab are more active on a bigger tide, especially after dark.", rank: 93 }) },
-
-  { key: "bluecrab", name: "Blue Swimmer Crab", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4],
-    build: () => ({ text: "Blue swimmer crabs are more active on the bigger of today's two tide pushes.", rank: 93 }) },
-
-  { key: "threadfin", name: "Threadfin Salmon", reef: false, season: [3, 4, 5, 9, 10, 11],
-    build: () => ({ text: "Threadfin salmon prefer gentle current — worth a look around the smaller, neap tides rather than a big push.", rank: 92 }) },
-
-  { key: "snapper", name: "Snapper", reef: true, season: null,
-    build: () => ({ text: "Snapper respond better to moving water than dead slack — try the run-in over structure.", rank: 90 }) },
-
-  { key: "spanishmackerel", name: "Spanish Mackerel", reef: true, season: [9, 10, 11, 12, 1, 2, 3, 4, 5],
-    build: () => ({ text: "Spanish mackerel often trigger right on the tide change — early morning is also worth a look.", rank: 88 }) },
-
-  { key: "cobia", name: "Cobia", reef: true, season: [9, 10, 11, 12, 1, 2, 3, 4],
-    build: () => ({ text: "Cobia need the tide actually moving — worth avoiding the dead slack.", rank: 91 }) },
-
-  { key: "longtailtuna", name: "Longtail / Mac Tuna", reef: true, season: [3, 4, 5],
-    build: () => ({ text: "Longtail and mac tuna show no strong tide preference — worth drifting onto any bait schools you find.", rank: 94 }) },
-
-  { key: "sweetlip", name: "Sweetlip Emperor", reef: true, season: null,
-    build: () => ({ text: "Sweetlip work a rising tide over the shallower grounds, or dawn and dusk over the deeper drop-offs.", rank: 90 }) }
+  { key: "sweetlip", name: "Sweetlip Emperor", reef: true, season: null, category: "tide",
+    build: () => ({ text: `<span class="species-name">Sweetlip</span> like the rising tide over the shallows, or dawn and dusk over the drop-offs`, rank: 90 }) }
 ];
 
-/* Bream and flathead always open the paragraph; one more species -- the
-   best-ranked match for today's location, season and tide -- follows.
-   Snapper gets swapped for the closure warning (plus the next-best
-   alternative, if any) whenever the forecast day falls inside the
-   15 Jul-15 Aug closure. */
+/* Bream and flathead always open the paragraph on their own bare lines.
+   Every other eligible species for today's location, season and snapper
+   closure follows as two flowing sentences instead of one fragment per
+   species: tide-driven species first (whiting, jew, grunter, threadfin,
+   snapper, sweetlip, trevally), then a shorter sentence for the handful
+   whose bite runs on light/time-of-day rather than a tide turn (tailor,
+   dart, mangrove jack, squid). This replaces the old "pick exactly one
+   extra species" approach -- Tod's call, 2026-09, after the trimmed
+   species list made "every species in season" a genuinely short, readable
+   set most months rather than the near-full roster it would have been
+   against the old 18-entry list. */
 function buildSpeciesCommentary(weather, qldPoints, dayOffset, locKey, waveCheck) {
   const dateStr = weather?.daily?.time?.[dayOffset];
   if (!dateStr) return "Not enough data to suggest species timing for this day.";
@@ -1136,29 +1120,30 @@ function buildSpeciesCommentary(weather, qldPoints, dayOffset, locKey, waveCheck
   const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[dayOffset]);
   const month = parseInt(dateStr.slice(5, 7), 10);
   const isReef = REEF_PRESETS.has(locKey);
+  const snapperClosed = isSnapperClosed(dateStr);
 
   const sentences = [breamWindow(turns, sunRiseMin, sunSetMin), flatheadWindow(turns, sunRiseMin, sunSetMin)];
-  const wildlifeNote = buildWildlifeSighting(dateStr, waveCheck, locKey);
-  if (wildlifeNote) sentences.push(wildlifeNote);
 
   const eligible = SPECIES
     .filter(s => !s.reef || isReef)
     .filter(s => !s.season || s.season.includes(month))
+    .filter(s => !(s.key === "snapper" && snapperClosed))
     .map(s => {
       const built = s.build(turns, sunRiseMin, sunSetMin);
-      return built ? { key: s.key, name: s.name, text: built.text, rank: built.rank + dayJitter(dateStr, s.key) } : null;
+      return built ? { category: s.category, text: built.text, rank: built.rank + dayJitter(dateStr, s.key) } : null;
     })
     .filter(Boolean)
     .sort((a, b) => a.rank - b.rank);
 
-  const top = eligible[0] || null;
-  if (top && top.key === "snapper" && isSnapperClosed(dateStr)) {
-    const alt = eligible.find(s => s.key !== "snapper");
-    sentences.push("⚠ Snapper is closed until 16 August.");
-    if (alt) sentences.push(alt.text);
-  } else if (top) {
-    sentences.push(top.text);
-  }
+  const tideGroup = eligible.filter(s => s.category === "tide").map(s => s.text);
+  const lightGroup = eligible.filter(s => s.category === "light").map(s => s.text);
+
+  if (tideGroup.length) sentences.push(`${joinNatural(tideGroup)}.`);
+  if (lightGroup.length) sentences.push(`${joinNatural(lightGroup)}.`);
+  if (isReef && snapperClosed) sentences.push("⚠ Snapper is closed until 16 August.");
+
+  const wildlifeNote = buildWildlifeSighting(dateStr, waveCheck, locKey);
+  if (wildlifeNote) sentences.push(wildlifeNote);
 
   return sentences.join(" ");
 }
