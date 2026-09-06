@@ -79,6 +79,10 @@
     font-size: 0.88rem; color: #6ee7b7; margin: -6px 0 12px 0;
     display: none;
   }
+  .weekly-wildlife {
+    font-size: 13px; color: #e5e7eb; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.45;
+  }
   .forecast-row {
     display: flex; flex-direction: row; overflow-x: auto; gap: 14px;
     padding: 8px 0 18px 0; scroll-snap-type: x mandatory;
@@ -106,9 +110,16 @@
   .score { font-size: 26px; font-weight: bold; }
   .score .max { font-size: 14px; font-weight: normal; color: rgba(255,255,255,0.65); }
   .status { font-size: 17px; margin-top: 4px; }
+  .score-row { display: flex; align-items: center; gap: 10px; }
+  .status-pill { font-size: 18px; font-weight: 800; padding: 6px 16px; border-radius: 999px; line-height: 1; }
+  .status-pill.GO { background: rgba(52, 211, 153, 0.16); color: #6ee7b7; }
+  .status-pill.MAYBE { background: rgba(252, 211, 77, 0.16); color: #fcd34d; }
+  .status-pill.NO-GO { background: rgba(248, 113, 113, 0.16); color: #fca5a5; }
+  .status-pill.NO-DATA { background: rgba(156, 163, 175, 0.16); color: #9ca3af; }
+  .scoring-note { font-size: 12px; color: #e5e7eb; margin: 8px 0 12px 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.4; }
   .commentary { font-size: 13px; margin: 10px 0 12px 0; line-height: 1.45; color: #e5e7eb; }
   .check { margin: 5px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 6px; }
-  .tide-times { font-size: 12px; color: #9ca3af; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .tide-times { font-size: 12px; color: #e5e7eb; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
   .temp-range { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
   .safe-until {
     font-size: 13px; color: #fcd34d; background: rgba(245, 158, 11, 0.08);
@@ -290,6 +301,21 @@ const LOCATIONS = {
   mud:         { lat: -27.320, lon: 153.215, name: "Mud Island" },
   caboolture:  { lat: -27.128, lon: 153.063, name: "Caboolture River" }
 };
+
+// Locations Tod fishes as open-water/shallow reef rather than estuary -- only
+// these four ever surface the reef-gated species in SPECIES below (snapper,
+// Spanish mackerel, cobia, longtail/mac tuna, sweetlip). Pine River,
+// Pumicestone Passage, Caboolture River, and any custom-searched location
+// stay on the universal species list only -- agreed with Tod 2026-09.
+const REEF_PRESETS = new Set(["moreton", "scarborough", "woody", "mud"]);
+
+// Broader than REEF_PRESETS: this is everywhere Tod actually expects marine
+// wildlife (dolphins/dugongs/turtles/whales), which includes Pumicestone
+// Passage's open water even though it's not "reef" for species-gating
+// purposes above. Pine River and Caboolture River are excluded -- true
+// rivers, not open bay/passage -- and so is any custom-searched location,
+// since its habitat is unknown. Agreed with Tod 2026-09.
+const BAY_WILDLIFE_PRESETS = new Set(["moreton", "pumicestone", "scarborough", "woody", "mud"]);
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
 
@@ -925,131 +951,309 @@ function joinNatural(list) {
   return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
 }
 
-/* Original single-track commentary, kept as a fallback for the rare day where an
-   entire dimension (every boating check, or every fishing check) is missing data --
-   too little to confidently label that side "good"/"fair"/"rough" at all. */
-function scoreRationaleLegacy(checks, status, score, extra) {
-  const valid = checks.filter(c => c.valid);
+/* ---------- Species timing & wildlife sightings ----------
+   Replaces the old scoreRationale()/renderChecklist() commentary with a
+   species-timing summary: what's likely biting on today's tide, for species
+   Tod actually targets. Bream and flathead always open the paragraph, using
+   Tod's own corrected rule -- both want the last two hours of a tide's run
+   plus the first hour past the turn, but anchored on opposite turns: bream
+   on the high, flathead on the low. Everything else comes from
+   species_seasons_tides.md in the fish-coach skill (general web research,
+   not independently verified the way Tod's own bream/flathead rule is),
+   narrowed to the species list agreed with Tod 2026-09. Note: that source
+   table flags both grunter and threadfin salmon as Central/North Qld
+   (Zilzie-area) species rather than confirmed Moreton Bay ones -- included
+   here because Tod asked for them in the "safe everywhere" list, but worth
+   re-checking against what actually turns up at these seven spots. */
+
+// Wraps a minutes-since-midnight value -- which can go negative or past 1440
+// once a species window is offset from a tide turn near midnight -- back
+// into a displayable 0-1439 time-of-day.
+function wrapMinutes(m) {
+  return ((m % 1440) + 1440) % 1440;
+}
+
+// Among today's tide turns of one type (high/low), picks whichever sits
+// closest to dawn or dusk -- the same "when would you actually be fishing"
+// idea the tide score itself already uses, rather than an arbitrary pick on
+// a day with two turns of the same type.
+function pickTurn(turns, type, sunRiseMin, sunSetMin) {
+  const candidates = turns.filter(t => t.type === type);
+  if (!candidates.length) return null;
+  let best = null, bestDiff = Infinity;
+  for (const t of candidates) {
+    const diffs = [];
+    if (sunRiseMin != null) diffs.push(Math.abs(t.minutes - sunRiseMin));
+    if (sunSetMin != null) diffs.push(Math.abs(t.minutes - sunSetMin));
+    const diff = diffs.length ? Math.min(...diffs) : 0;
+    if (diff < bestDiff) { bestDiff = diff; best = t; }
+  }
+  return { turn: best, diff: bestDiff };
+}
+
+/* Bream: per Tod, the last two hours of the run-in through the top of the
+   tide and the first hour of the run-out -- anchored on a HIGH turn. */
+function breamWindow(turns, sunRiseMin, sunSetMin) {
+  const p = pickTurn(turns, "high", sunRiseMin, sunSetMin);
+  if (!p) return "Bream: no high tide turn to work with today.";
+  const start = wrapMinutes(p.turn.minutes - 120);
+  const end = wrapMinutes(p.turn.minutes + 60);
+  return `Bream best ${minutesToClock(start)}–${minutesToClock(end)} — the last two hours of the run-in through the ${minutesToClock(p.turn.minutes)} high and the first hour of the run-out.`;
+}
+
+/* Flathead: per Tod, the mirror image of bream's rule -- the last two hours
+   of the falling tide through the first hour of the low -- anchored on a LOW
+   turn instead. */
+function flatheadWindow(turns, sunRiseMin, sunSetMin) {
+  const p = pickTurn(turns, "low", sunRiseMin, sunSetMin);
+  if (!p) return "Flathead: no low tide turn to work with today.";
+  const start = wrapMinutes(p.turn.minutes - 120);
+  const end = wrapMinutes(p.turn.minutes + 60);
+  return `Flathead best ${minutesToClock(start)}–${minutesToClock(end)}, the last two hours of the falling tide into the top of the ${minutesToClock(p.turn.minutes)} low.`;
+}
+
+// Many species share the same placeholder rank (see SPECIES below) when their
+// bite isn't clock-driven enough to rank by dawn/dusk proximity. Left alone,
+// a plain sort is stable and ties would always resolve to whichever species
+// happens to be listed first in SPECIES -- so the exact same species would
+// win almost every day, and snapper (declared near the end of the list)
+// would rarely surface even when it's genuinely the best-ranked match, which
+// would make the closure warning nearly untestable in real use. This adds a
+// small (<1) deterministic offset from today's date and the species key, so
+// ties still resolve consistently for a given day/species but rotate from
+// day to day instead of always favouring declaration order.
+function dayJitter(dateStr, key) {
+  let h = 0;
+  const s = dateStr + key;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 97;
+  return h / 97;
+}
+
+// Snapper (and squire -- the same species legally) closed 15 Jul-15 Aug each
+// year, east coast tidal waters. Always re-check against Queensland DPI
+// directly before trusting this -- closure dates have shifted before.
+function isSnapperClosed(dateStr) {
+  const m = parseInt(dateStr.slice(5, 7), 10);
+  const d = parseInt(dateStr.slice(8, 10), 10);
+  return (m === 7 && d >= 15) || (m === 8 && d <= 15);
+}
+
+/* Species beyond bream and flathead. `season` is a list of eligible months
+   (1-12), or null for year-round. `reef` gates a species to REEF_PRESETS.
+   `build` returns { text, rank } or null when today's tide data can't
+   support it. `rank` is minutes-from-dawn/dusk for tide-anchored species
+   (lower wins) or a fixed placeholder for species whose bite isn't
+   clock-driven, so a well-timed anchored species outranks a generic
+   condition-only note. Source: species_seasons_tides.md in the fish-coach
+   skill -- see that file's per-row notes for how confident each entry is. */
+const SPECIES = [
+  { key: "whiting", name: "Whiting", reef: false, season: null,
+    build: () => ({ text: "Whiting are worth a look as the tide eases toward the low.", rank: 90 }) },
+
+  { key: "trevally", name: "Trevally", reef: false, season: [10, 11],
+    build: () => ({ text: "Trevally are worth a cast on the run-out, as bait gets swept off the flats.", rank: 90 }) },
+
+  { key: "jew", name: "Jew", reef: false, season: [7, 8, 9, 10],
+    build: (turns, sr, ss) => {
+      const p = pickTurn(turns, "high", sr, ss);
+      if (!p) return null;
+      const start = wrapMinutes(p.turn.minutes - 60), end = wrapMinutes(p.turn.minutes + 60);
+      return { text: `Jew fish well ${minutesToClock(start)}–${minutesToClock(end)}, either side of the ${minutesToClock(p.turn.minutes)} high, in low light.`, rank: p.diff };
+    } },
+
+  { key: "tailor", name: "Tailor", reef: false, season: [6, 7, 8, 9],
+    build: () => ({ text: "Tailor are worth a look right on dawn or dusk, in an active bait wash — tide stage matters less than the light.", rank: 90 }) },
+
+  { key: "dart", name: "Dart", reef: false, season: [10, 11, 12, 1, 2, 3, 4],
+    build: (turns, sr, ss) => {
+      const p = pickTurn(turns, "high", sr, ss);
+      if (!p) return null;
+      const start = wrapMinutes(p.turn.minutes - 120);
+      return { text: `Dart are worth a look ${minutesToClock(start)}–${minutesToClock(p.turn.minutes)}, the last two hours of the incoming tide before the ${minutesToClock(p.turn.minutes)} high.`, rank: p.diff };
+    } },
+
+  { key: "grunter", name: "Grunter", reef: false, season: null,
+    build: (turns, sr, ss) => {
+      const p = pickTurn(turns, "low", sr, ss);
+      if (!p) return null;
+      const start = wrapMinutes(p.turn.minutes - 120), end = wrapMinutes(p.turn.minutes + 120);
+      return { text: `Grunter are worth a look ${minutesToClock(start)}–${minutesToClock(end)}, straddling the ${minutesToClock(p.turn.minutes)} low — best after dark.`, rank: p.diff };
+    } },
+
+  { key: "mangrovejack", name: "Mangrove Jack", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4, 5],
+    build: () => ({ text: "Mangrove jack are worth a look on the falling tide after dark, tight to structure.", rank: 90 }) },
+
+  { key: "mullet", name: "Mullet", reef: false, season: [4, 5, 6],
+    build: () => ({ text: "The autumn mullet run is on — worth a look on a rising tide around dawn.", rank: 92 }) },
+
+  { key: "luderick", name: "Luderick", reef: false, season: null,
+    build: (turns, sr, ss) => {
+      const p = pickTurn(turns, "high", sr, ss);
+      if (!p) return null;
+      const start = wrapMinutes(p.turn.minutes - 90);
+      return { text: `Luderick are worth a look ${minutesToClock(start)}–${minutesToClock(p.turn.minutes)}, working up to the top of the ${minutesToClock(p.turn.minutes)} high.`, rank: p.diff };
+    } },
+
+  { key: "squid", name: "Squid", reef: false, season: null,
+    build: () => ({ text: "Squid are worth a look after dark on moving water, working the edges of jetty or foreshore lights.", rank: 91 }) },
+
+  { key: "mudcrab", name: "Mud Crab", reef: false, season: [10, 11, 12, 1, 2, 3],
+    build: () => ({ text: "Mud crab are more active on a bigger tide, especially after dark.", rank: 93 }) },
+
+  { key: "bluecrab", name: "Blue Swimmer Crab", reef: false, season: [9, 10, 11, 12, 1, 2, 3, 4],
+    build: () => ({ text: "Blue swimmer crabs are more active on the bigger of today's two tide pushes.", rank: 93 }) },
+
+  { key: "threadfin", name: "Threadfin Salmon", reef: false, season: [3, 4, 5, 9, 10, 11],
+    build: () => ({ text: "Threadfin salmon prefer gentle current — worth a look around the smaller, neap tides rather than a big push.", rank: 92 }) },
+
+  { key: "snapper", name: "Snapper", reef: true, season: null,
+    build: () => ({ text: "Snapper respond better to moving water than dead slack — try the run-in over structure.", rank: 90 }) },
+
+  { key: "spanishmackerel", name: "Spanish Mackerel", reef: true, season: [9, 10, 11, 12, 1, 2, 3, 4, 5],
+    build: () => ({ text: "Spanish mackerel often trigger right on the tide change — early morning is also worth a look.", rank: 88 }) },
+
+  { key: "cobia", name: "Cobia", reef: true, season: [9, 10, 11, 12, 1, 2, 3, 4],
+    build: () => ({ text: "Cobia need the tide actually moving — worth avoiding the dead slack.", rank: 91 }) },
+
+  { key: "longtailtuna", name: "Longtail / Mac Tuna", reef: true, season: [3, 4, 5],
+    build: () => ({ text: "Longtail and mac tuna show no strong tide preference — worth drifting onto any bait schools you find.", rank: 94 }) },
+
+  { key: "sweetlip", name: "Sweetlip Emperor", reef: true, season: null,
+    build: () => ({ text: "Sweetlip work a rising tide over the shallower grounds, or dawn and dusk over the deeper drop-offs.", rank: 90 }) }
+];
+
+/* Bream and flathead always open the paragraph; one more species -- the
+   best-ranked match for today's location, season and tide -- follows.
+   Snapper gets swapped for the closure warning (plus the next-best
+   alternative, if any) whenever the forecast day falls inside the
+   15 Jul-15 Aug closure. */
+function buildSpeciesCommentary(weather, qldPoints, dayOffset, locKey, waveCheck) {
+  const dateStr = weather?.daily?.time?.[dayOffset];
+  if (!dateStr) return "Not enough data to suggest species timing for this day.";
+
+  const turns = findQldTideTurns(qldPoints, dateStr);
+  const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[dayOffset]);
+  const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[dayOffset]);
+  const month = parseInt(dateStr.slice(5, 7), 10);
+  const isReef = REEF_PRESETS.has(locKey);
+
+  const sentences = [breamWindow(turns, sunRiseMin, sunSetMin), flatheadWindow(turns, sunRiseMin, sunSetMin)];
+  const wildlifeNote = buildWildlifeSighting(dateStr, waveCheck, locKey);
+  if (wildlifeNote) sentences.push(wildlifeNote);
+
+  const eligible = SPECIES
+    .filter(s => !s.reef || isReef)
+    .filter(s => !s.season || s.season.includes(month))
+    .map(s => {
+      const built = s.build(turns, sunRiseMin, sunSetMin);
+      return built ? { key: s.key, name: s.name, text: built.text, rank: built.rank + dayJitter(dateStr, s.key) } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank);
+
+  const top = eligible[0] || null;
+  if (top && top.key === "snapper" && isSnapperClosed(dateStr)) {
+    const alt = eligible.find(s => s.key !== "snapper");
+    sentences.push("⚠ Snapper is closed until 16 August.");
+    if (alt) sentences.push(alt.text);
+  } else if (top) {
+    sentences.push(top.text);
+  }
+
+  return sentences.join(" ");
+}
+
+/* Wildlife sightings -- whales, dugongs, turtles and dolphins. Tod's
+   correction (2026-09): calm water is what actually drives whether you SEE
+   any of these, not just which month it is -- dolphins are resident
+   year-round with no season at all, and whales/dugongs/turtles are easier
+   to spot on a flat day even within their season. So all four run through
+   one gate: in season (dolphins always pass; the other three need their
+   month), AND calm water at dawn or dusk (reusing the same wave-check tiers
+   the score already computes), AND a location that's actually open
+   bay/passage rather than a river -- see BAY_WILDLIFE_PRESETS. When more
+   than one qualifies the same day, dayJitter fairly rotates which one gets
+   named, the same fix already applied to SPECIES ties. */
+const WILDLIFE = [
+  { name: "Whales", icon: "🐋", months: [6, 7, 8, 9, 10, 11], note: "peak humpback season — worth a look on the way out to the bay" },
+  { name: "Dugongs", icon: "", months: [5, 6, 7, 8, 9, 10], note: "good visibility for sightings over the seagrass beds today" },
+  { name: "Turtles", icon: "🐢", months: [4, 5, 6, 7, 8, 9, 10, 11], note: "calm, clear water — good turtle-spotting conditions" },
+  { name: "Dolphins", icon: "🐬", months: null, note: "resident year-round — flat water today makes them easy to spot" }
+];
+function buildWildlifeSighting(dateStr, waveCheck, locKey) {
+  if (!dateStr || !BAY_WILDLIFE_PRESETS.has(locKey)) return null;
+  if (!waveCheck || !waveCheck.valid) return null;
+  const calmDawn = waveCheck.dawn && (waveCheck.dawn.tier === "calm" || waveCheck.dawn.tier === "light");
+  const calmDusk = waveCheck.dusk && (waveCheck.dusk.tier === "calm" || waveCheck.dusk.tier === "light");
+  if (!calmDawn && !calmDusk) return null;
+
+  const month = parseInt(dateStr.slice(5, 7), 10);
+  const eligible = WILDLIFE.filter(w => !w.months || w.months.includes(month));
+  if (!eligible.length) return null;
+  const match = eligible.slice().sort((a, b) => dayJitter(dateStr, a.name) - dayJitter(dateStr, b.name))[0];
+  return `${match.icon ? match.icon + " " : ""}${match.name}: ${match.note}`;
+}
+
+/* General "what's around this month" wildlife line for the "Top spots this
+   week" card -- unlike buildWildlifeSighting above, this isn't tied to one
+   day's conditions or one location, so it can safely sit under that card's
+   top-3 list (which spans all 7 presets) without implying a match that
+   isn't really there. Names everything currently in season, plus dolphins
+   (always around), and reminds Tod that a calm day in the open bay is what
+   actually turns "in season" into "saw one." */
+function buildWeeklyWildlifeSummary(dateStr) {
+  if (!dateStr) return null;
+  const month = parseInt(dateStr.slice(5, 7), 10);
+  const seasonal = WILDLIFE.filter(w => w.months && w.months.includes(month))
+    .map(w => `${w.icon ? w.icon + " " : ""}${w.name}`);
+
+  let text = "🐬 Dolphins are around Moreton Bay year-round";
+  if (seasonal.length) {
+    text += `, and it's prime season for ${joinNatural(seasonal)} too`;
+  }
+  text += " — all easiest to spot on a calm day out in the open bay.";
+  return text;
+}
+
+/* Condensed scoring line -- replaces the old row-by-row checklist. Narrates
+   how each check actually scored (reusing the same blurb text the old
+   commentary already had available) rather than reading like a points-lost
+   tally. */
+function buildScoringSentence(checks) {
   const missing = checks.filter(c => !c.valid);
+  const valid = checks.filter(c => c.valid && c.blurb);
+  if (!valid.length) return "Not enough data to describe how today scored.";
 
   const ranked = valid
     .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0 }))
     .sort((a, b) => b.ratio - a.ratio);
-
   const strong = ranked.filter(c => c.ratio >= 0.65);
-  const weak = ranked.filter(c => c.ratio <= 0.3);
+  const soft = ranked.filter(c => c.ratio < 0.65);
+  const missingNote = missing.length ? ` (${missing.map(c => c.icon).join(" ")} data unavailable.)` : "";
 
-  const goodBits = strong.map(c => c.blurb || c.name.toLowerCase()).slice(0, 3);
-  const badBits = weak.map(c => c.blurb || c.name.toLowerCase()).slice(0, 3);
-
-  const missingNote = missing.length
-    ? ` (${missing.map(c => c.icon).join(" ")} data unavailable — score reflects what's known.)`
-    : "";
-
-  let tip = "";
-  if ((status === "GO" || status === "MAYBE") && extra?.bestWindow) {
-    tip = ` Best window looks like ${extra.bestWindow}${extra.tideAgrees ? ", with the tide turning right around then too" : ""}.`;
-  } else if (status === "NO-GO") {
-    tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
-  }
-
-  if (status === "GO") {
-    const lead = goodBits.join(", ") || "conditions line up well across the board";
-    let text = `${capitalize(lead)}.`;
-    text += badBits.length ? ` Only real drag is ${badBits.join(" and ")}.` : "";
-    return text + tip + missingNote;
-  }
-  if (status === "MAYBE") {
-    const parts = [];
-    if (goodBits.length) parts.push(`In your favor: ${goodBits.join(", ")}.`);
-    if (badBits.length) parts.push(`Working against it: ${badBits.join(", ")}.`);
-    const text = parts.length ? parts.join(" ") : "No single factor stands out either way.";
-    return text + tip + missingNote;
-  }
-  const lead = badBits.join(", ") || "several factors are working against a session";
-  let text = `Mainly because ${lead}.`;
-  text += goodBits.length ? ` A few bright spots though: ${goodBits.join(", ")}.` : "";
-  return text + tip + missingNote;
-}
-
-const BOATING_ADJ = { "GO": "Good", "MAYBE": "Fair", "NO-GO": "Rough" };
-const FISHING_ADJ = { "GO": "good", "MAYBE": "fair", "NO-GO": "tough" };
-
-/* Leads with a direct "Good boating, tough fishing" style pairing, since boating
-   comfort/safety (wind, wave, rain) and bite likelihood (tide timing, pressure
-   trend) are genuinely different questions that the single overall score blends
-   into one number -- a flat-calm, dry, ideal-wind day can still land on MAYBE
-   purely because the tide isn't turning near dawn/dusk, which this makes explicit
-   instead of hiding it behind one score.
-
-   The follow-up sentence ranks every check by points actually lost (maxScore -
-   score), not just whether it crosses an old all-or-nothing cutoff -- a check
-   sitting at 40% of its max was previously invisible in this commentary even
-   though it was costing more points than ones that did get mentioned. */
-function scoreRationale(checks, status, score, extra) {
-  if (status === "NO-DATA") return "Not enough data was available to calculate a score for this day.";
-
-  const { boatingBand, fishingBand } = extra || {};
-
-  const missing = checks.filter(c => !c.valid);
-  const missingNote = missing.length
-    ? ` (${missing.map(c => c.icon).join(" ")} data unavailable — score reflects what's known.)`
-    : "";
-
-  let tip = "";
-  if ((status === "GO" || status === "MAYBE") && extra?.bestWindow) {
-    tip = ` Best window looks like ${extra.bestWindow}${extra.tideAgrees ? ", with the tide turning right around then too" : ""}.`;
-  } else if (status === "NO-GO") {
-    tip = " Worth waiting for calmer wind or a firmer pressure trend before heading out.";
-  }
-
-  if (!boatingBand || !fishingBand || boatingBand.status === "NO-DATA" || fishingBand.status === "NO-DATA") {
-    return scoreRationaleLegacy(checks, status, score, extra);
-  }
-
-  const opener = `${BOATING_ADJ[boatingBand.status]} boating, ${FISHING_ADJ[fishingBand.status]} fishing.`;
-
-  const valid = checks.filter(c => c.valid && c.blurb);
-  const ranked = valid
-    .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0, lost: c.maxScore - c.score }))
-    .sort((a, b) => b.lost - a.lost);
-
-  const drags = ranked.filter(c => c.ratio < 0.65).slice(0, 2);
-  const strong = ranked.filter(c => c.ratio >= 0.65).sort((a, b) => b.ratio - a.ratio);
-
-  const body = drags.length
-    ? ` What's holding it back is ${joinNatural(drags.map(c => c.blurb))}.`
-    : (strong.length ? ` Nothing much holding this one back — ${joinNatural(strong.slice(0, 3).map(c => c.blurb))}.` : "");
-
-  return opener + body + tip + missingNote;
-}
-
-function renderChecklist(checks) {
-  return checks.map(c => {
-    const tick = c.valid ? (c.pass ? "✓" : "✗") : "–";
-    const cls = !c.valid ? "unknown" : (c.pass ? "pass" : "fail");
-    const ptsTxt = c.valid ? `${c.score}/${c.maxScore} pts` : (c.unavailableText || "no data");
-    return `<div class="check ${cls}"><span class="icon">${c.icon}</span> ${tick} ${c.name} — ${ptsTxt}</div>`;
-  }).join("");
+  let text = "";
+  if (strong.length) text += `${capitalize(joinNatural(strong.map(c => c.blurb)))}.`;
+  if (soft.length) text += ` ${capitalize(joinNatural(soft.map(c => c.blurb)))} pulled the day back a little.`;
+  return (text.trim() || "Every check came in around average today.") + missingNote;
 }
 
 function renderCard(dateStr, result, extraClass, headingHTML) {
-  const { checks, score, status, bestWindow, tideAgrees, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, boatingBand, fishingBand } = result;
+  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, speciesCommentary, scoringSentence } = result;
   const tideTimesHTML = tideTimes ? `<div class="tide-times">🕐 ${tideTimes}</div>` : "";
-  const tempHTML = (tempMax != null || tempMin != null)
-    ? `<div class="temp-range">${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}</div>`
-    : "";
+  const dateTempHTML = `<div class="temp-range">${dateStr}${(tempMax != null || tempMin != null) ? ` · ${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}` : ""}</div>`;
   const safeUntilHTML = safeUntil
     ? `<div class="safe-until ${safeUntil.crossHour == null ? "safe-until-good" : ""}">🕒 ${safeUntil.text}${SHOW_WIND_SPARKLINE ? windSparkSVG : ""}</div>`
     : "";
   return `
-      <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
-      <div class="status">${status}</div>
+      <div class="score-row">
+        <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
+        <div class="status-pill ${status}">${status}</div>
+      </div>
       ${headingHTML}
-      ${tempHTML}
-      <div class="commentary">${scoreRationale(checks, status, score, { bestWindow, tideAgrees, boatingBand, fishingBand })}</div>
+      ${dateTempHTML}
+      <div class="commentary">${speciesCommentary || ""}</div>
       ${safeUntilHTML}
-      ${renderChecklist(checks)}
+      ${scoringSentence ? `<div class="scoring-note">${scoringSentence}</div>` : ""}
       ${tideTimesHTML}`;
 }
 
@@ -1140,6 +1344,9 @@ async function load() {
     for (let i = 0; i <= 7; i++) {
       const date = weather.daily.time[i];
       const r = computeDayScore(weather, marine, qldPoints, i);
+      const waveCheck = r.checks.find(c => c.icon === "🌊");
+      r.speciesCommentary = buildSpeciesCommentary(weather, qldPoints, i, key, waveCheck);
+      r.scoringSentence = buildScoringSentence(r.checks);
       dayResults.push({ i, date, r });
     }
 
@@ -1154,14 +1361,22 @@ async function load() {
       summaryEl.style.display = "block";
     }
 
+    // The per-day calm-water wildlife note (buildWildlifeSighting) is tied to
+    // one specific day and location, so it doesn't fit neatly onto the "Top
+    // spots" card -- that card's top 3 rows span all 7 presets and often
+    // aren't even a bay location. But the blank space under that list is
+    // real, and a general "what's around this month" wildlife summary reads
+    // fine there without pretending to match any one row above it.
+    const weeklyWildlifeHTML = buildWeeklyWildlifeSummary(weather.daily.time[0]);
     let cardsHTML = `<div class="forecast-card" id="topLocationsCard">
       <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
       <div id="topLocationsBody">${renderTopLocationsCardHTML([], true)}</div>
+      ${weeklyWildlifeHTML ? `<div class="weekly-wildlife">${weeklyWildlifeHTML}</div>` : ""}
     </div>`;
 
     dayResults.forEach(({ i, date, r }) => {
       const label = i === 0 ? "Today" : dayName(date);
-      const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}<br>${date}</h3>`;
+      const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}</h3>`;
       const isBest = i === bestIdx;
       cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}">
         ${isBest ? '<span class="best-badge">Best day</span>' : ""}
