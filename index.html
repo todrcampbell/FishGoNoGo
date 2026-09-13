@@ -17,6 +17,12 @@
     padding-top: calc(16px + env(safe-area-inset-top, 28px));
     -webkit-text-size-adjust: 100%;
     overscroll-behavior-y: contain;
+    /* Safety net (2026-09): a text input's own built-in minimum width can grow
+       past its flex space under a larger OS/browser text-size setting, and
+       without this the whole page would scroll sideways rather than the
+       input just shrinking. See #locationSearchInput's min-width fix below --
+       this is the backstop in case anything else ever does the same thing. */
+    overflow-x: hidden;
   }
   .main { max-width: 1400px; margin: auto; padding-bottom: 30vh; }
   h1 { margin: 0 0 6px 0; font-size: 1.45rem; }
@@ -53,14 +59,26 @@
   .action-btn:active { background: #26313f; }
   .search-row { display: flex; gap: 8px; max-width: 420px; margin-bottom: 6px; }
   #locationSearchInput {
-    flex: 1; padding: 12px 14px; font-size: 16px; min-height: 48px;
+    /* min-width:0 overrides the flex item default of min-width:auto, which
+       otherwise pins the input to its browser-computed intrinsic minimum
+       width (based on font metrics) instead of letting it shrink to fit the
+       row. At normal text size that minimum is small enough to not matter;
+       at a larger OS/browser text-size setting it can grow past the space
+       left after the button, pushing the whole row off the right edge of
+       the screen instead of the input just shrinking (reported by Tod on a
+       real Android device, 2026-09 -- not reproducible in the emulator
+       since that runs at default text scale). */
+    flex: 1; min-width: 0; padding: 12px 14px; font-size: 16px; min-height: 48px;
     background: #1f2937; color: #eee; border-radius: 10px; border: 1px solid #374151;
   }
   #locationSearchInput:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
   #locationSearchBtn {
-    padding: 12px 16px; font-size: 15px; min-height: 48px;
+    /* Icon-only button (2026-09, Tod's call) -- was text "Search", now a
+       plain arrow. Smaller footprint also helps the overflow fix above by
+       leaving more of the fixed-width row for the input itself. */
+    padding: 12px 18px; font-size: 18px; font-weight: 600; line-height: 1; min-height: 48px;
     background: #1f2937; color: #eee; border-radius: 10px; border: 1px solid #374151;
-    cursor: pointer;
+    cursor: pointer; flex-shrink: 0;
   }
   #locationSearchBtn:active { background: #26313f; }
   .compare-item {
@@ -79,10 +97,6 @@
   .best-day-summary {
     font-size: 0.88rem; color: #6ee7b7; margin: -6px 0 12px 0;
     display: none;
-  }
-  .weekly-wildlife {
-    font-size: 13px; color: #e5e7eb; margin-top: 14px; padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.45;
   }
   .forecast-row {
     display: flex; flex-direction: row; overflow-x: auto; gap: 14px;
@@ -113,6 +127,10 @@
   .status { font-size: 17px; margin-top: 4px; }
   .score-row { display: flex; align-items: center; gap: 10px; }
   .status-pill { font-size: 18px; font-weight: 800; padding: 6px 16px; border-radius: 999px; line-height: 1; }
+  /* Tap-to-share (2026-09) is deliberately invisible -- no icon, no outline --
+     per Tod's call. cursor:pointer is the one hint, and only matters on
+     desktop since it has no effect on touch. */
+  .status-pill[data-share] { cursor: pointer; }
   .status-pill.GO { background: rgba(52, 211, 153, 0.16); color: #6ee7b7; }
   .status-pill.MAYBE { background: rgba(252, 211, 77, 0.16); color: #fcd34d; }
   .status-pill.NO-GO { background: rgba(248, 113, 113, 0.16); color: #fca5a5; }
@@ -133,6 +151,22 @@
   .check .icon { flex-shrink: 0; }
   .check.no-data { opacity: 0.65; font-style: italic; }
   .tide-times { font-size: 12px; color: #e5e7eb; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  /* Collapsed-by-default species-times disclosure (2026-09). Native <details>
+     rather than hand-rolled JS -- free keyboard/screen-reader support, and
+     each card's dropdown opens/closes independently with zero extra state
+     to manage across a page that stacks several of these. */
+  .species-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .species-toggle summary {
+    cursor: pointer; list-style: none; font-size: 13px; color: #e5e7eb;
+    display: flex; align-items: center; gap: 7px; padding: 2px 0;
+  }
+  .species-toggle summary::-webkit-details-marker { display: none; }
+  .species-toggle summary::before {
+    content: "▸"; display: inline-block; color: #9ca3af; font-size: 11px;
+    transition: transform 0.15s ease;
+  }
+  .species-toggle[open] summary::before { transform: rotate(90deg); }
+  .species-toggle .commentary { margin: 8px 0 0 0; }
   .temp-range { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
   .safe-until {
     font-size: 13px; color: #fcd34d; background: rgba(245, 158, 11, 0.08);
@@ -214,9 +248,10 @@
     select, .search-row, input[type="time"], .action-btn { max-width: 100%; }
     /* Was flex-direction: column with a full-width button, which stacked the
        search box and button onto two lines on narrow screens. Tod wants them
-       on one line -- "Search" is short enough that a row still fits down to
-       a 320px-wide screen with the input taking the remaining space. */
-    #locationSearchBtn { padding: 12px 12px; flex-shrink: 0; }
+       on one line -- an icon-only button is narrow enough that a row still
+       fits down to a 320px-wide screen with the input taking the remaining
+       space. */
+    #locationSearchBtn { padding: 12px 14px; flex-shrink: 0; }
   }
 </style>
 </head>
@@ -238,7 +273,7 @@
 
   <div class="search-row">
     <input type="text" id="locationSearchInput" placeholder="Search a place">
-    <button id="locationSearchBtn" type="button">Search</button>
+    <button id="locationSearchBtn" type="button" aria-label="Search">→</button>
   </div>
   <div class="gauge-note" id="searchStatus"></div>
 
@@ -259,6 +294,7 @@
     <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
     <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
     <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
+    <div class="kpi-item"><strong>Share</strong> — tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
 
     <h2 style="margin-top:22px;">Preferences</h2>
     <label class="pref-toggle">
@@ -269,9 +305,8 @@
       <input type="checkbox" id="wavePrefToggle">
       I'm not on the open bay
     </label>
+    <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
   </div>
-
-  <button id="planCrossingLink" type="button" class="link-button">Plan a Crossing →</button>
   </div>
 
   <div id="crossingView" style="display:none;">
@@ -970,6 +1005,52 @@ function joinNatural(list) {
   return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
 }
 
+function escapeAttr(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+/* ---------- Share (2026-09, Tod's call) ----------
+   No separate share button -- tapping the GO/MAYBE/NO-GO pill itself shares
+   that day's summary, with no visual change to the pill (Tod: "invisible and
+   simple"). Deliberately lean: location, day/date/score/status, temp, tide
+   times, and the app link -- no species times or checklist detail, since
+   those read as fishing-tactics info rather than "should I go" info. Data for
+   the share travels as a small JSON blob in a data-share attribute set on the
+   pill in renderCard, read back here on click. */
+function buildShareText(data) {
+  const tempStr = (data.tempMax != null || data.tempMin != null)
+    ? `${data.tempMin != null ? Math.round(data.tempMin) + "°" : "–"} / ${data.tempMax != null ? Math.round(data.tempMax) + "°" : "–"}`
+    : null;
+  const lines = [
+    `FishGoNoGo — ${data.loc}`,
+    `${data.day} · ${data.date} · ${data.score}/100 ${data.status}`,
+  ];
+  if (tempStr) lines.push(tempStr);
+  if (data.tide) lines.push(`🕐 ${data.tide}`);
+  lines.push("", "https://todrcampbell.github.io/FishGoNoGo/");
+  return lines.join("\n");
+}
+
+async function shareCard(pillEl, data) {
+  const text = buildShareText(data);
+  if (navigator.share) {
+    try { await navigator.share({ text }); }
+    catch (e) { /* user cancelled the share sheet -- not worth surfacing */ }
+    return;
+  }
+  // No Web Share API (most desktop browsers) -- copy to clipboard instead and
+  // flash a quick confirmation right on the pill itself, since there's no
+  // separate share button to attach a status message to.
+  try {
+    await navigator.clipboard.writeText(text);
+    const original = pillEl.textContent;
+    pillEl.textContent = "Copied!";
+    setTimeout(() => { pillEl.textContent = original; }, 1200);
+  } catch (e) {
+    console.error("FishGoNoGo: share/copy failed", e);
+  }
+}
+
 /* ---------- Species timing & wildlife sightings ----------
    Replaces the old scoreRationale()/renderChecklist() commentary with a
    species-timing summary: what's likely biting on today's tide, for species
@@ -1201,7 +1282,7 @@ const SPECIES = [
    (Tod, 2026-09: "drop it"). */
 function buildSpeciesCommentary(weather, qldPoints, dayOffset, locKey, waveCheck) {
   const dateStr = weather?.daily?.time?.[dayOffset];
-  if (!dateStr) return "Not enough data to suggest species timing for this day.";
+  if (!dateStr) return { html: "Not enough data to suggest species timing for this day.", count: 0 };
 
   const turns = findQldTideTurns(qldPoints, dateStr);
   const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[dayOffset]);
@@ -1239,7 +1320,9 @@ function buildSpeciesCommentary(weather, qldPoints, dayOffset, locKey, waveCheck
   const wildlifeNote = buildWildlifeSighting(dateStr, waveCheck, locKey);
   if (wildlifeNote) html += `<div class="extra-line">${wildlifeNote}</div>`;
 
-  return html;
+  // count is species with a valid line today (pre-merge), used as the badge
+  // on the collapsed "Species times (N)" summary row -- see renderCard.
+  return { html, count: eligible.length };
 }
 
 /* Wildlife sightings -- whales, dugongs, turtles and dolphins. Tod's
@@ -1271,27 +1354,6 @@ function buildWildlifeSighting(dateStr, waveCheck, locKey) {
   if (!eligible.length) return null;
   const match = eligible.slice().sort((a, b) => dayJitter(dateStr, a.name) - dayJitter(dateStr, b.name))[0];
   return `${match.icon ? match.icon + " " : ""}${match.name}: ${match.note}`;
-}
-
-/* General "what's around this month" wildlife line for the "Top spots this
-   week" card -- unlike buildWildlifeSighting above, this isn't tied to one
-   day's conditions or one location, so it can safely sit under that card's
-   top-3 list (which spans all 7 presets) without implying a match that
-   isn't really there. Names everything currently in season, plus dolphins
-   (always around), and reminds Tod that a calm day in the open bay is what
-   actually turns "in season" into "saw one." */
-function buildWeeklyWildlifeSummary(dateStr) {
-  if (!dateStr) return null;
-  const month = parseInt(dateStr.slice(5, 7), 10);
-  const seasonal = WILDLIFE.filter(w => w.months && w.months.includes(month))
-    .map(w => `${w.icon ? w.icon + " " : ""}${w.name}`);
-
-  let text = "🐬 Dolphins are around Moreton Bay year-round";
-  if (seasonal.length) {
-    text += `, and it's prime season for ${joinNatural(seasonal)} too`;
-  }
-  text += " — all easiest to spot on a calm day out in the open bay.";
-  return text;
 }
 
 /* Row-by-row checklist -- one line per KPI check, icon + pass/no-data mark +
@@ -1334,24 +1396,43 @@ function buildScoringSentence(checks) {
   return (text.trim() || "Every check came in around average today.") + missingNote;
 }
 
-function renderCard(dateStr, result, extraClass, headingHTML) {
+function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayLabel) {
   const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, speciesCommentary, scoringSentence } = result;
+  // Share data lives on the pill itself (data-share, JSON) rather than a
+  // separate button -- see buildShareText/shareCard. NO-DATA days have
+  // nothing worth sharing, so the pill stays inert for those.
+  const shareAttr = (status !== "NO-DATA" && locationName && dayLabel)
+    ? ` data-share="${escapeAttr(JSON.stringify({ loc: locationName, day: dayLabel, date: dateStr, score, status, tempMax, tempMin, tide: tideTimes || null }))}"`
+    : "";
   const tideTimesHTML = tideTimes ? `<div class="tide-times">🕐 ${tideTimes}</div>` : "";
   const dateTempHTML = `<div class="temp-range">${dateStr}${(tempMax != null || tempMin != null) ? ` · ${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}` : ""}</div>`;
   const safeUntilHTML = safeUntil
     ? `<div class="safe-until ${safeUntil.crossHour == null ? "safe-until-good" : ""}">🕒 ${safeUntil.text}${SHOW_WIND_SPARKLINE ? windSparkSVG : ""}</div>`
     : "";
+  // Species timing moved below the checklist/tide line and behind a collapsed
+  // <details> disclosure (2026-09, Tod's call) -- it's useful but less
+  // important than the safety/conditions info above it, so it no longer
+  // competes for attention at the top of the card. The snapper-closure
+  // warning and the per-day wildlife note (already part of speciesCommentary
+  // .html) fold into the same dropdown rather than showing separately.
+  const speciesCount = speciesCommentary?.count ?? 0;
+  const speciesHTML = speciesCommentary?.html ?? "";
+  const speciesDetailsHTML = `
+      <details class="species-toggle">
+        <summary>Species times${speciesCount ? ` (${speciesCount})` : ""}</summary>
+        <div class="commentary">${speciesHTML}</div>
+      </details>`;
   return `
       <div class="score-row">
         <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
-        <div class="status-pill ${status}">${status}</div>
+        <div class="status-pill ${status}"${shareAttr}>${status}</div>
       </div>
       ${headingHTML}
       ${dateTempHTML}
-      <div class="commentary">${speciesCommentary || ""}</div>
       ${safeUntilHTML}
       ${scoringSentence || ""}
-      ${tideTimesHTML}`;
+      ${tideTimesHTML}
+      ${speciesDetailsHTML}`;
 }
 
 function renderTopLocationsCardHTML(top3, loading) {
@@ -1458,17 +1539,13 @@ async function load() {
       summaryEl.style.display = "block";
     }
 
-    // The per-day calm-water wildlife note (buildWildlifeSighting) is tied to
-    // one specific day and location, so it doesn't fit neatly onto the "Top
-    // spots" card -- that card's top 3 rows span all 7 presets and often
-    // aren't even a bay location. But the blank space under that list is
-    // real, and a general "what's around this month" wildlife summary reads
-    // fine there without pretending to match any one row above it.
-    const weeklyWildlifeHTML = buildWeeklyWildlifeSummary(weather.daily.time[0]);
+    // The generic "what's around this month" wildlife blurb that used to sit
+    // under this list was dropped 2026-09 (Tod's call) -- it duplicated the
+    // per-day calm-water wildlife note that already appears on individual
+    // day cards, and having both was redundant rather than additive.
     let cardsHTML = `<div class="forecast-card" id="topLocationsCard">
       <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
       <div id="topLocationsBody">${renderTopLocationsCardHTML([], true)}</div>
-      ${weeklyWildlifeHTML ? `<div class="weekly-wildlife">${weeklyWildlifeHTML}</div>` : ""}
     </div>`;
 
     dayResults.forEach(({ i, date, r }) => {
@@ -1477,7 +1554,7 @@ async function load() {
       const isBest = i === bestIdx;
       cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}">
         ${isBest ? '<span class="best-badge">Best day</span>' : ""}
-        ${renderCard(date, r, "", heading)}
+        ${renderCard(date, r, "", heading, name, label)}
       </div>`;
     });
 
@@ -1545,6 +1622,18 @@ async function searchLocation() {
     status.textContent = "Search failed — try again.";
   }
 }
+
+// Delegated (not per-pill) since #cardsGrid's contents are replaced wholesale
+// on every load()/re-render -- one listener here survives that, individual
+// ones on each pill wouldn't.
+document.getElementById("cardsGrid").addEventListener("click", (e) => {
+  const pill = e.target.closest(".status-pill[data-share]");
+  if (!pill) return;
+  let data;
+  try { data = JSON.parse(pill.dataset.share); }
+  catch (e2) { return; }
+  shareCard(pill, data);
+});
 
 document.getElementById("locationSearchBtn").addEventListener("click", searchLocation);
 document.getElementById("locationSearchInput").addEventListener("keydown", (e) => {
