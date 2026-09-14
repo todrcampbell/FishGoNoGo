@@ -142,42 +142,57 @@
   .commentary .species-line:last-child { border-bottom: none; }
   .commentary .species-line .time { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; opacity: 0.85; }
   .commentary .extra-line { margin-top: 8px; }
+  /* Sub-label (2026-09, Tod's call) -- Bite times now also holds Species
+     times underneath it, and Commentary now also holds the Scoring
+     checklist underneath it, both in one dropdown each. This small header
+     marks where the second section starts inside either one, since the
+     dropdown's own <summary> only names the first/primary section. */
+  .sub-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    color: #9ca3af; margin: 12px 0 4px 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);
+  }
   /* Border/padding-top removed 2026-09 when this moved inside a <details>
-     (see .scoring-toggle below) -- the dropdown's own top divider plus the
-     summary line already separate it from the safe-until banner above, so
-     the checklist's own top border was becoming a redundant second line
-     directly under "Scoring". */
+     (see .commentary-toggle below, which is what the checklist now lives
+     inside) -- the dropdown's own top divider plus the summary line already
+     separate it from the safe-until banner above, so the checklist's own
+     top border was becoming a redundant second line directly under
+     "Commentary". */
   .checklist { margin: 8px 0 4px 0; color: #e5e7eb; }
   .check { margin: 5px 0; font-size: 13px; line-height: 1.4; display: flex; align-items: flex-start; gap: 6px; }
   .check .icon { flex-shrink: 0; }
   .check.no-data { opacity: 0.65; font-style: italic; }
-  /* Moved next to .temp-range (2026-09, Tod's call) and restyled to match
-     it -- same quiet 13px grey, no border-top -- so date/temp/tide read as
-     one continuous quick-facts block instead of tide times sticking out as
-     its own bordered section between the (now collapsed) Scoring and
-     Species dropdowns. Icon kept for scannability. */
+  /* Sits directly under the heading line now that temp moved onto it
+     (2026-09, Tod's call, see .heading-temp) -- same quiet 13px grey style
+     it already had, just one line higher than before. */
   .tide-times { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
-  /* Collapsed-by-default species-times disclosure (2026-09). Native <details>
-     rather than hand-rolled JS -- free keyboard/screen-reader support, and
-     each card's dropdown opens/closes independently with zero extra state
-     to manage across a page that stacks several of these. */
-  /* .bite-toggle and .scoring-toggle (2026-09) share every rule with
-     .species-toggle -- same collapsed-dropdown treatment for "Bite times"
-     and now "Scoring" too, just extra classes so each can still be targeted
-     individually where needed (see .bite-toggle .bite-caveat below). */
-  .species-toggle, .bite-toggle, .scoring-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
-  .species-toggle summary, .bite-toggle summary, .scoring-toggle summary {
+  /* Temp folded onto the day-heading line instead of its own row below it
+     (2026-09, Tod's call) -- saves a full line of card height. Same quiet
+     13px grey as tide-times/temp used to be as a standalone line, just
+     inline after the day label now. */
+  .heading-temp { font-size: 13px; font-weight: 400; color: #9ca3af; }
+  /* Collapsed-by-default disclosure (2026-09). Native <details> rather than
+     hand-rolled JS -- free keyboard/screen-reader support, and each card's
+     dropdown opens/closes independently with zero extra state to manage
+     across a page that stacks several of these. */
+  /* .bite-toggle and .commentary-toggle (2026-09) share every rule with
+     .species-toggle (still used by the page-level KPI/Preferences
+     dropdowns below) -- same collapsed-dropdown treatment for "Bite times"
+     (which now also holds Species times underneath it) and "Commentary"
+     (which now also holds the Scoring checklist underneath it). The
+     per-card Scoring and Species times dropdowns this used to include were
+     folded into those two and no longer exist on their own. */
+  .species-toggle, .bite-toggle, .commentary-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .species-toggle summary, .bite-toggle summary, .commentary-toggle summary {
     cursor: pointer; list-style: none; font-size: 13px; color: #e5e7eb;
     display: flex; align-items: center; gap: 7px; padding: 2px 0;
   }
-  .species-toggle summary::-webkit-details-marker, .bite-toggle summary::-webkit-details-marker, .scoring-toggle summary::-webkit-details-marker { display: none; }
-  .species-toggle summary::before, .bite-toggle summary::before, .scoring-toggle summary::before {
+  .species-toggle summary::-webkit-details-marker, .bite-toggle summary::-webkit-details-marker, .commentary-toggle summary::-webkit-details-marker { display: none; }
+  .species-toggle summary::before, .bite-toggle summary::before, .commentary-toggle summary::before {
     content: "▸"; display: inline-block; color: #9ca3af; font-size: 11px;
     transition: transform 0.15s ease;
   }
-  .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .scoring-toggle[open] summary::before { transform: rotate(90deg); }
-  .species-toggle .commentary, .bite-toggle .commentary { margin: 8px 0 0 0; }
-  .bite-toggle .bite-caveat { font-size: 11px; color: #9ca3af; margin-top: 8px; line-height: 1.4; }
+  .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .commentary-toggle[open] summary::before { transform: rotate(90deg); }
+  .species-toggle .commentary, .bite-toggle .commentary, .commentary-toggle .commentary { margin: 8px 0 0 0; }
   /* Bite-times alignment marker (2026-09 fix): previously appended as plain
      text inside .time, which has white-space:nowrap -- fine for a short
      clock range, but combined with "⭐ near dawn/dusk" at a larger
@@ -194,7 +209,6 @@
      sizes as well. */
   .commentary .species-line { flex-wrap: wrap; }
   .commentary .align-note { flex-basis: 100%; text-align: right; font-size: 11px; color: #fcd34d; }
-  .temp-range { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
   .safe-until {
     font-size: 13px; color: #fcd34d; background: rgba(245, 158, 11, 0.08);
     border-radius: 8px; padding: 8px 10px; margin: 4px 0 10px 0;
@@ -332,8 +346,9 @@
         <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
         <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
         <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
-        <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
-        <div class="kpi-item"><strong>Bite times (solunar)</strong> — not scored. Shown below Species times as the four solunar major/minor windows for that day (moon overhead/underfoot, moonrise/moonset), with a ⭐ on any window within an hour of dawn or dusk. Source: CycleCalcs' moon API (Astronomy Engine). Solunar theory is a folk heuristic, not settled science — treat it as a secondary cue, not a forecast.</div>
+        <div class="kpi-item"><strong>Bite times (solunar)</strong> — not scored. One dropdown per card holds the four solunar major/minor windows for that day (moon overhead/underfoot, moonrise/moonset), with a ⭐ on any window within an hour of dawn or dusk, and Species timing underneath. Source: CycleCalcs' moon API (Astronomy Engine). Solunar theory is a folk heuristic, not settled science — treat it as a secondary cue, not a forecast.</div>
+        <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown under Bite times, one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
+        <div class="kpi-item"><strong>Commentary</strong> — not scored. One dropdown per card leads with a paragraph combining the day's strongest and weakest checks with its best Major solunar bite window, and holds the Scoring checklist underneath it.</div>
         <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
         <div class="kpi-item"><strong>Share</strong> — tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
       </div>
@@ -474,6 +489,22 @@ function minutesToClock(mins) {
   let h12 = h24 % 12;
   if (h12 === 0) h12 = 12;
   return `${h12}:${String(m).padStart(2, "0")}${period}`;
+}
+
+// Tide-turn-specific (2026-09, Tod's call) -- every tide-turn time comes
+// from an hourly sea-level series (see tidePointsFromMarine below), so the
+// minutes are always exactly :00. Showing "10:00am" was spending space on
+// a digit that never varies; "10am" says the same thing. Deliberately not
+// a change to minutesToClock itself, which everything else on the card
+// (bite/solunar windows, sunrise/sunset, etc.) still needs real minute
+// precision from.
+function hourOnlyClock(mins) {
+  if (mins == null) return "";
+  const h24 = Math.floor(mins / 60) % 24;
+  const period = h24 < 12 ? "am" : "pm";
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return `${h12}${period}`;
 }
 
 /* "Safe until" + hourly wind trace: the dawn/dusk score only samples two moments,
@@ -664,8 +695,15 @@ function tideNearSun(weather, qldPoints, dayOffset) {
   }
 
   const sortedTurns = turns.slice().sort((a, b) => a.minutes - b.minutes);
+  // H/L rather than High/Low, and hourOnlyClock rather than minutesToClock
+  // (2026-09, Tod's call) -- a 4-turn day (common) was wrapping onto a
+  // second line next to the ⚓ icon; dropping the always-":00" minutes on
+  // top of the single-letter turn type keeps it on one line with room to
+  // spare. Only affects this card-level summary line -- the Scoring
+  // checklist's own tide row still spells out "High"/"Low tide" in full,
+  // since it has more room and reads better narratively there.
   const turnsLabel = sortedTurns
-    .map(t => `${t.type === "high" ? "High" : "Low"} ${minutesToClock(t.minutes)}`)
+    .map(t => `${t.type === "high" ? "H" : "L"} ${hourOnlyClock(t.minutes)}`)
     .join(" · ");
 
   let best = null;
@@ -796,7 +834,7 @@ function rainAtDawnDusk(weather, dayOffset) {
     : rainScoreAvoid(rainDawn, rainDusk, dailyTotal);
 }
 
-// Drives the ☀️/🌧️ icon on the temp-range line (2026-09, Tod's call) --
+// Drives the ☀️/🌧️ icon on the heading's inline temp (2026-09, Tod's call) --
 // deliberately independent of the "I don't mind light rain" preference
 // above, which only changes how forgiving the SCORE is about rain, not
 // whether it's actually going to rain. Same <1mm "dry" and >=2mm "midday
@@ -1532,9 +1570,70 @@ function buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin) {
     else if (frac <= 0.1) html += `<div class="extra-line">🌑 Near new moon — solunar windows are typically strongest now.</div>`;
   }
 
-  html += `<div class="bite-caveat">Approximate, based on solunar theory — a folk heuristic, not settled science. Times from CycleCalcs (Astronomy Engine).</div>`;
-
   return { html, count: windows.length };
+}
+
+// Caveat moved into the "How KPIs Are Calculated" dropdown (2026-09, Tod's
+// call) -- that panel's own Bite times (solunar) entry already said "a folk
+// heuristic, not settled science," so repeating it here as well was just
+// the same disclaimer twice on one card.
+
+// Rough part-of-day label for a bite window's center time, used by
+// buildConditionsCommentary below to talk about "the evening major window"
+// rather than a bare clock range -- same spirit as the "Dawn"/"Sunset"
+// labels the Wind/Wave checks already use, just with finer bands since a
+// solunar window can fall at any hour, not just dawn or dusk.
+function timeOfDayLabel(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  if (h < 5) return "overnight";
+  if (h < 8) return "early-morning";
+  if (h < 11) return "morning";
+  if (h < 13) return "late-morning";
+  if (h < 17) return "afternoon";
+  if (h < 20) return "evening";
+  return "late-night";
+}
+
+/* Builds the "Commentary" dropdown content (2026-09, Tod's call) -- a new,
+   additional dropdown, positioned above Scoring, closed by default. Doesn't
+   touch Scoring/Species times/Bite times at all; it's a one-paragraph,
+   advice-style read that ties the day's conditions to its best Major
+   solunar window, generated the same way buildScoringSentence's checklist
+   sentence already was (rank checks by how well they scored, turn the
+   blurbs into natural-language clauses) rather than hand-written per day.
+   Needs moonData, so like Bite times it's patched in once CycleCalcs
+   resolves rather than rendered upfront -- see the loadMoonTimes.then()
+   block in load(). */
+function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin) {
+  const valid = checks.filter(c => c.valid && c.blurb);
+  if (!valid.length) return "Not enough data to summarize today's conditions.";
+
+  const ranked = valid
+    .map(c => ({ ...c, ratio: c.maxScore > 0 ? c.score / c.maxScore : 0 }))
+    .sort((a, b) => b.ratio - a.ratio);
+  const strong = ranked.filter(c => c.ratio >= 0.65).map(c => c.blurb);
+  const soft = ranked.filter(c => c.ratio < 0.65).map(c => c.blurb);
+
+  let text = strong.length
+    ? `${capitalize(joinNatural(strong))}.`
+    : `${capitalize(joinNatural(soft))}.`;
+  if (strong.length && soft.length) {
+    text += ` ${capitalize(joinNatural(soft))} takes some of the shine off.`;
+  }
+
+  // Each window carries which one of dawn/dusk it actually lines up with (or
+  // neither) -- previously this always printed "dawn/dusk" regardless of
+  // which one matched (Tod's feedback, 2026-09). Named explicitly when there
+  // is a match, left out entirely when there isn't, rather than guessing.
+  const majors = buildBiteWindows(moonData).filter(w => w.label.startsWith("Major"));
+  const majorsWithAlign = majors.map(w => ({ ...w, align: alignsWithDawnDusk(w.centerMin, sunRiseMin, sunSetMin) }));
+  if (majorsWithAlign.length) {
+    const aligned = majorsWithAlign.find(w => w.align);
+    const pick = aligned || majorsWithAlign[0];
+    const alignNote = pick.align ? `, right on ${pick.align},` : "";
+    text += ` The ${timeOfDayLabel(pick.centerMin)} major window (${minutesToClock(pick.startMin)}–${minutesToClock(pick.endMin)})${alignNote} is the one to build the trip around.`;
+  }
+  return text;
 }
 
 /* Row-by-row checklist -- one line per KPI check, icon + pass/no-data mark +
@@ -1585,23 +1684,27 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
   const shareAttr = (status !== "NO-DATA" && locationName && dayLabel)
     ? ` data-share="${escapeAttr(JSON.stringify({ loc: locationName, day: dayLabel, date: dateStr, score, status, tempMax, tempMin, tide: tideTimes || null }))}"`
     : "";
-  // 🌙 (2026-09, Tod's call) rather than 🕐 -- the Scoring dropdown's own
-  // Wave Height row already uses 🌊, so pairing that with a 🌊 here too
-  // would have the same icon meaning two different things on one card. The
-  // moon is what actually drives tides, and nothing else on the card uses it.
-  const tideTimesHTML = tideTimes ? `<div class="tide-times">🌙 ${tideTimes}</div>` : "";
-  // Scoring checklist moved behind a collapsed dropdown (2026-09, Tod's
-  // call) -- stays in its original spot right after the safe-until banner
-  // (it's explaining the score right above it, unlike species/bite times
-  // further down), but starts closed like those two rather than always
-  // open, so it no longer eats card height by default.
-  const scoringDetailsHTML = scoringSentence
-    ? `
-      <details class="scoring-toggle">
-        <summary>Scoring</summary>
-        ${scoringSentence}
-      </details>`
-    : "";
+  // ⚓ (2026-09, Tod's call) -- went through 🕐 then 🌙 before landing here.
+  // The Scoring dropdown's own Wave Height row already uses 🌊, so reusing
+  // that (or the same-family 🌙) here risked one icon meaning two different
+  // things on the card. ⚓ is unambiguous and unused elsewhere on the card.
+  const tideTimesHTML = tideTimes ? `<div class="tide-times">⚓ ${tideTimes}</div>` : "";
+  // Commentary + Scoring, one dropdown (2026-09, Tod's call) -- previously
+  // two separate dropdowns stacked here; folded into one so the narrative
+  // paragraph and the row-by-row checklist that backs it up live together,
+  // named "Commentary" for the dropdown as a whole (Tod's call, not
+  // "Scoring" -- the paragraph is the headline, the checklist is supporting
+  // detail under its own .sub-label). Closed by default, same as before.
+  // The paragraph depends on the CycleCalcs moon lookup, so it starts on
+  // this placeholder and gets patched in place once that day's lookup
+  // resolves (see load()); the checklist is ready immediately and never
+  // changes after that.
+  const commentaryDetailsHTML = `
+      <details class="commentary-toggle" id="commentaryToggle-${dateStr}">
+        <summary>Commentary</summary>
+        <div class="commentary">Loading…</div>
+        ${scoringSentence ? `<div class="sub-label">Scoring</div>${scoringSentence}` : ""}
+      </details>`;
   // Calendar date dropped from the visible card (2026-09, Tod's call) --
   // the heading above already names the day (Today/a weekday), and the
   // exact date still travels in the Share text via dateStr regardless of
@@ -1613,44 +1716,45 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
   const tempPart = (tempMax != null || tempMin != null)
     ? `${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}`
     : "";
-  const dateTempHTML = `<div class="temp-range">${weatherIcon}${tempPart ? " " + tempPart : ""}</div>`;
+  // Temp moved onto the same line as the day heading (2026-09, Tod's call)
+  // -- saves a full line of card height versus its own row below. headingHTML
+  // always arrives from load() as a plain "<h3 ...>Label</h3>" string, so
+  // splicing the temp span in right before the closing tag keeps this from
+  // needing a second element or a change to how load() builds that string.
+  const headingWithTempHTML = headingHTML.replace(
+    /<\/h3>\s*$/,
+    ` <span class="heading-temp">${weatherIcon}${tempPart ? " " + tempPart : ""}</span></h3>`
+  );
   const safeUntilHTML = safeUntil
     ? `<div class="safe-until ${safeUntil.crossHour == null ? "safe-until-good" : ""}">🕒 ${safeUntil.text}${SHOW_WIND_SPARKLINE ? windSparkSVG : ""}</div>`
     : "";
-  // Species timing moved below the checklist/tide line and behind a collapsed
-  // <details> disclosure (2026-09, Tod's call) -- it's useful but less
-  // important than the safety/conditions info above it, so it no longer
-  // competes for attention at the top of the card. The snapper-closure
-  // warning and the per-day wildlife note (already part of speciesCommentary
-  // .html) fold into the same dropdown rather than showing separately.
-  const speciesCount = speciesCommentary?.count ?? 0;
+  // Bite times + Species times, one dropdown (2026-09, Tod's call) --
+  // previously two separate dropdowns; folded into one named "Bite times",
+  // with Species times underneath it under its own .sub-label. Species
+  // content (including the snapper-closure warning and per-day wildlife
+  // note already baked into speciesCommentary.html) is ready immediately,
+  // but Bite times isn't -- it's fetched from CycleCalcs after the grid is
+  // already on screen (see load()) -- so only the bite portion starts on a
+  // placeholder and gets patched in place once that day's lookup resolves.
+  // The id and the .commentary lookup inside it are how that patch finds
+  // this exact bite section again without touching the species section
+  // sitting right below it in the same dropdown.
   const speciesHTML = speciesCommentary?.html ?? "";
-  const speciesDetailsHTML = `
-      <details class="species-toggle">
-        <summary>Species times${speciesCount ? ` (${speciesCount})` : ""}</summary>
-        <div class="commentary">${speciesHTML}</div>
-      </details>`;
-  // Bite times (solunar) -- unlike species timing, this isn't ready at
-  // render time (it's fetched from CycleCalcs after the grid is already on
-  // screen, see load()), so it always starts on this placeholder and gets
-  // patched in place once that day's lookup resolves. The id is how that
-  // patch finds this exact card again.
   const biteDetailsHTML = `
       <details class="bite-toggle" id="biteToggle-${dateStr}">
         <summary>Bite times</summary>
         <div class="commentary">Loading…</div>
+        ${speciesHTML ? `<div class="sub-label">Species times</div><div class="commentary">${speciesHTML}</div>` : ""}
       </details>`;
   return `
       <div class="score-row">
         <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
         <div class="status-pill ${status}"${shareAttr}>${status}</div>
       </div>
-      ${headingHTML}
-      ${dateTempHTML}
+      ${headingWithTempHTML}
       ${tideTimesHTML}
       ${safeUntilHTML}
-      ${scoringDetailsHTML}
-      ${speciesDetailsHTML}
+      ${commentaryDetailsHTML}
       ${biteDetailsHTML}`;
 }
 
@@ -1783,24 +1887,33 @@ async function load() {
     // than loading just the selected one — the 9th card fills in once it resolves.
     loadTopLocationsCard();
 
-    // Bite times (solunar) -- fired after the grid is already showing wind/
-    // tide/species info, not awaited before it, so CycleCalcs being slow or
-    // unreachable can never delay the info the app actually exists for.
-    // Each day patches in independently as its own lookup resolves. The
-    // loadId check discards a response that comes back after Tod has
-    // already switched to a different location.
-    dayResults.forEach(({ i, date }) => {
+    // Bite times (solunar) and Commentary -- fired after the grid is already
+    // showing wind/tide/species info, not awaited before it, so CycleCalcs
+    // being slow or unreachable can never delay the info the app actually
+    // exists for. Each day patches in independently as its own lookup
+    // resolves. The loadId check discards a response that comes back after
+    // Tod has already switched to a different location. Commentary rides
+    // along on the same lookup as Bite times (2026-09, Tod's call) since it
+    // needs the same moon data for its "best Major window" line -- no sense
+    // firing a second CycleCalcs call per day just to split them.
+    dayResults.forEach(({ i, date, r }) => {
       const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[i]);
       const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[i]);
       loadMoonTimes(lat, lon, date).then(moonData => {
         if (loadId !== currentLoadId) return; // stale -- location changed since this was fired
         const commentary = buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin);
         const details = document.getElementById(`biteToggle-${date}`);
-        if (!details) return;
-        const summary = details.querySelector("summary");
-        const body = details.querySelector(".commentary");
-        if (summary) summary.textContent = `Bite times${commentary.count ? ` (${commentary.count})` : ""}`;
-        if (body) body.innerHTML = commentary.html;
+        if (details) {
+          const summary = details.querySelector("summary");
+          const body = details.querySelector(".commentary");
+          if (summary) summary.textContent = `Bite times${commentary.count ? ` (${commentary.count})` : ""}`;
+          if (body) body.innerHTML = commentary.html;
+        }
+        const commentaryDetails = document.getElementById(`commentaryToggle-${date}`);
+        if (commentaryDetails) {
+          const body = commentaryDetails.querySelector(".commentary");
+          if (body) body.textContent = buildConditionsCommentary(r.checks, moonData, sunRiseMin, sunSetMin);
+        }
       });
     });
 
