@@ -94,10 +94,6 @@
     padding: 18px; margin: 10px 0; border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4); width: 100%; max-width: 340px;
   }
-  .best-day-summary {
-    font-size: 0.88rem; color: #6ee7b7; margin: -6px 0 12px 0;
-    display: none;
-  }
   .forecast-row {
     display: flex; flex-direction: row; overflow-x: auto; gap: 14px;
     padding: 8px 0 18px 0; scroll-snap-type: x mandatory;
@@ -146,27 +142,58 @@
   .commentary .species-line:last-child { border-bottom: none; }
   .commentary .species-line .time { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; opacity: 0.85; }
   .commentary .extra-line { margin-top: 8px; }
-  .checklist { margin: 8px 0 12px 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.18); color: #e5e7eb; }
+  /* Border/padding-top removed 2026-09 when this moved inside a <details>
+     (see .scoring-toggle below) -- the dropdown's own top divider plus the
+     summary line already separate it from the safe-until banner above, so
+     the checklist's own top border was becoming a redundant second line
+     directly under "Scoring". */
+  .checklist { margin: 8px 0 4px 0; color: #e5e7eb; }
   .check { margin: 5px 0; font-size: 13px; line-height: 1.4; display: flex; align-items: flex-start; gap: 6px; }
   .check .icon { flex-shrink: 0; }
   .check.no-data { opacity: 0.65; font-style: italic; }
-  .tide-times { font-size: 12px; color: #e5e7eb; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  /* Moved next to .temp-range (2026-09, Tod's call) and restyled to match
+     it -- same quiet 13px grey, no border-top -- so date/temp/tide read as
+     one continuous quick-facts block instead of tide times sticking out as
+     its own bordered section between the (now collapsed) Scoring and
+     Species dropdowns. Icon kept for scannability. */
+  .tide-times { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
   /* Collapsed-by-default species-times disclosure (2026-09). Native <details>
      rather than hand-rolled JS -- free keyboard/screen-reader support, and
      each card's dropdown opens/closes independently with zero extra state
      to manage across a page that stacks several of these. */
-  .species-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
-  .species-toggle summary {
+  /* .bite-toggle and .scoring-toggle (2026-09) share every rule with
+     .species-toggle -- same collapsed-dropdown treatment for "Bite times"
+     and now "Scoring" too, just extra classes so each can still be targeted
+     individually where needed (see .bite-toggle .bite-caveat below). */
+  .species-toggle, .bite-toggle, .scoring-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .species-toggle summary, .bite-toggle summary, .scoring-toggle summary {
     cursor: pointer; list-style: none; font-size: 13px; color: #e5e7eb;
     display: flex; align-items: center; gap: 7px; padding: 2px 0;
   }
-  .species-toggle summary::-webkit-details-marker { display: none; }
-  .species-toggle summary::before {
+  .species-toggle summary::-webkit-details-marker, .bite-toggle summary::-webkit-details-marker, .scoring-toggle summary::-webkit-details-marker { display: none; }
+  .species-toggle summary::before, .bite-toggle summary::before, .scoring-toggle summary::before {
     content: "▸"; display: inline-block; color: #9ca3af; font-size: 11px;
     transition: transform 0.15s ease;
   }
-  .species-toggle[open] summary::before { transform: rotate(90deg); }
-  .species-toggle .commentary { margin: 8px 0 0 0; }
+  .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .scoring-toggle[open] summary::before { transform: rotate(90deg); }
+  .species-toggle .commentary, .bite-toggle .commentary { margin: 8px 0 0 0; }
+  .bite-toggle .bite-caveat { font-size: 11px; color: #9ca3af; margin-top: 8px; line-height: 1.4; }
+  /* Bite-times alignment marker (2026-09 fix): previously appended as plain
+     text inside .time, which has white-space:nowrap -- fine for a short
+     clock range, but combined with "⭐ near dawn/dusk" at a larger
+     accessibility text size the combined text could be wider than the card,
+     and since individual cards have no overflow clipping of their own, the
+     overrun rendered into the next card's space and got painted over by
+     that card's own background instead of just wrapping (reported by Tod on
+     a real device). Splitting it into its own flex item with flex-basis:100%
+     lets it drop to its own line within the row instead of forcing width or
+     overflowing -- .species-line already had the row as a flex container,
+     this just lets that row wrap instead of forcing everything onto one
+     line. Applies to species-times rows too since they share the same
+     markup, which only makes long species names/times safer at large text
+     sizes as well. */
+  .commentary .species-line { flex-wrap: wrap; }
+  .commentary .align-note { flex-basis: 100%; text-align: right; font-size: 11px; color: #fcd34d; }
   .temp-range { font-size: 13px; color: #9ca3af; margin: 2px 0 8px 0; }
   .safe-until {
     font-size: 13px; color: #fcd34d; background: rgba(245, 158, 11, 0.08);
@@ -183,6 +210,12 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   }
   .kpi-summary h2 { margin-top: 0; font-size: 18px; margin-bottom: 10px; }
+  /* The "How KPIs" dropdown is the panel's first child (2026-09) -- without
+     this it inherits .species-toggle's usual top margin/border, which reads
+     as a stray divider line right under the panel's own padding with
+     nothing above it to separate from (the old plain <h2> used
+     margin-top:0 for the same reason). */
+  .kpi-summary > .species-toggle:first-child { margin-top: 0; padding-top: 0; border-top: none; }
   .kpi-item { font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
   .info { margin-top: 10px; font-size: 0.85rem; color: #9ca3af; }
   .swipe-hint { font-size: 0.8rem; color: #9ca3af; margin: -4px 0 8px 0; }
@@ -211,7 +244,6 @@
       max-width: 920px; margin: 0 auto;
     }
     .swipe-hint { display: none; }
-    .best-day-summary { max-width: 920px; margin-left: auto; margin-right: auto; }
     .kpi-summary { max-width: 760px; margin-left: auto; margin-right: auto; text-align: left; }
     /* Without width:100% here, .link-button sits centered at whatever width .main
        allows — and for the <button> one (Plan a Crossing), it shrinks to its own text
@@ -278,34 +310,51 @@
   <div class="gauge-note" id="searchStatus"></div>
 
   <h2 class="section-title">This Week</h2>
-  <div class="best-day-summary" id="bestDaySummary"></div>
   <div class="swipe-hint">Swipe sideways to see more days →</div>
   <div class="forecast-row" id="cardsGrid">
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
   </div>
 
   <div class="kpi-summary">
-    <h2>How KPIs Are Calculated (max 100)</h2>
-    <div class="kpi-item"><strong>Wind — 25 pts.</strong> Dawn and sunset wind speed are each scored, then averaged. Calmer = more points. Gusts are shown alongside for reference but aren't scored — the "safe until" note below can flag a gust spike separately.</div>
-    <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — see Preferences below to ignore it.</div>
-    <div class="kpi-item"><strong>Tide — 28 pts.</strong> Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
-    <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
-    <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
-    <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
-    <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
-    <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
-    <div class="kpi-item"><strong>Share</strong> — tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
+    <!-- Collapsed dropdown (2026-09, Tod's call) -- reuses the same small
+         toggle style as the in-card Species/Bite/Scoring dropdowns rather
+         than a distinct larger one, for full visual consistency. See the
+         .kpi-summary > .species-toggle:first-child CSS override below --
+         without it this would inherit the toggle's usual top
+         margin/border, which looked like a stray line right under this
+         panel's own top padding with nothing above it to separate from. -->
+    <details class="species-toggle">
+      <summary>How KPIs Are Calculated (max 100)</summary>
+      <div class="commentary">
+        <div class="kpi-item"><strong>Wind — 25 pts.</strong> Dawn and sunset wind speed are each scored, then averaged. Calmer = more points. Gusts are shown alongside for reference but aren't scored — the "safe until" note below can flag a gust spike separately.</div>
+        <div class="kpi-item"><strong>Wave Height — 20 pts.</strong> Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — see Preferences below to ignore it.</div>
+        <div class="kpi-item"><strong>Tide — 28 pts.</strong> Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
+        <div class="kpi-item"><strong>Pressure — 20 pts.</strong> Falling pressure (pre-frontal) scores highest, stable is next best, rising scores lower — based on the common angling view that fish bite hardest ahead of a front and go quiet once a high builds back in. A very sharp drop (a front actively passing) scores low too, since the bite tends to shut down then.</div>
+        <div class="kpi-item"><strong>Rain near dawn/dusk — 7 pts.</strong> Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low.</div>
+        <div class="kpi-item"><strong>Missing data</strong> — any KPI that fails to load is excluded from the score and the max, not counted as a failure. The score reflects whatever data was available.</div>
+        <div class="kpi-item"><strong>Species timing</strong> — not scored. Shown below the score as one line per species, sorted earliest to latest. Bream, flathead, whiting, jew, dart, snapper and trevally each key to the tide turn nearest dawn or dusk; tailor and sweetlip key to dawn and dusk directly; jack and squid key to a window after dusk. Species that land on the exact same time share one line instead of repeating it. Threadfin isn't shown here — its trigger is a neap tide (a multi-day pattern), not a time of day, so it has no clock time to give it.</div>
+        <div class="kpi-item"><strong>Bite times (solunar)</strong> — not scored. Shown below Species times as the four solunar major/minor windows for that day (moon overhead/underfoot, moonrise/moonset), with a ⭐ on any window within an hour of dawn or dusk. Source: CycleCalcs' moon API (Astronomy Engine). Solunar theory is a folk heuristic, not settled science — treat it as a secondary cue, not a forecast.</div>
+        <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
+        <div class="kpi-item"><strong>Share</strong> — tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
+      </div>
+    </details>
 
-    <h2 style="margin-top:22px;">Preferences</h2>
-    <label class="pref-toggle">
-      <input type="checkbox" id="rainPrefToggle">
-      I don't mind light rain
-    </label>
-    <label class="pref-toggle">
-      <input type="checkbox" id="wavePrefToggle">
-      I'm not on the open bay
-    </label>
-    <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
+    <!-- Preferences holds live toggle state (unlike the reference-only
+         dropdown above), so its summary line reflects which preferences are
+         actually on right now (see updatePreferencesSummary()) rather than
+         staying a plain, uninformative label while collapsed. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary id="preferencesSummary">Preferences</summary>
+      <label class="pref-toggle">
+        <input type="checkbox" id="rainPrefToggle">
+        I don't mind light rain
+      </label>
+      <label class="pref-toggle">
+        <input type="checkbox" id="wavePrefToggle">
+        I'm not on the open bay
+      </label>
+      <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
+    </details>
   </div>
   </div>
 
@@ -376,6 +425,14 @@ const STORAGE_KEY = "fishGoNoGo.lastLocation";
 // Set to false to drop the hourly wind chart and keep only the "safe until" sentence,
 // if the chart proves too bulky on small screens.
 const SHOW_WIND_SPARKLINE = true;
+
+// Bite-times (2026-09): bumped every time load() runs, and captured as
+// loadId at the top of that call. Moon lookups are fetched and patched in
+// after the main grid already rendered (see load()) -- if Tod switches
+// location again before an earlier lookup resolves, comparing against this
+// counter lets that stale response recognise itself as stale and no-op,
+// instead of overwriting the new location's card with the old one's data.
+let currentLoadId = 0;
 
 function dayName(dateStr) {
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
@@ -739,6 +796,22 @@ function rainAtDawnDusk(weather, dayOffset) {
     : rainScoreAvoid(rainDawn, rainDusk, dailyTotal);
 }
 
+// Drives the ☀️/🌧️ icon on the temp-range line (2026-09, Tod's call) --
+// deliberately independent of the "I don't mind light rain" preference
+// above, which only changes how forgiving the SCORE is about rain, not
+// whether it's actually going to rain. Same <1mm "dry" and >=2mm "midday
+// rain" thresholds rainScoreAvoid already uses, just read directly here so
+// this doesn't depend on a scoring path that this icon has nothing to do
+// with.
+function dayLooksRainy(weather, dayOffset) {
+  const rainDawn = precipNear(weather, dayOffset, 6, 1);
+  const rainDusk = precipNear(weather, dayOffset, 18, 1);
+  const dailyTotal = weather?.daily?.precipitation_sum?.[dayOffset] ?? null;
+  if ((rainDawn ?? 0) >= 1 || (rainDusk ?? 0) >= 1) return true;
+  if (dailyTotal != null && dailyTotal >= 2) return true;
+  return false;
+}
+
 /* Wind: tiered 0-25, applied separately to dawn and dusk then averaged */
 function windPoints(speed) {
   if (speed < 8)  return { score: 25, tier: "ideal" };
@@ -990,8 +1063,9 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
 
   const tempMax = weather?.daily?.temperature_2m_max?.[dayOffset];
   const tempMin = weather?.daily?.temperature_2m_min?.[dayOffset];
+  const looksRainy = dayLooksRainy(weather, dayOffset);
 
-  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin, boatingBand, fishingBand };
+  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, boatingBand, fishingBand };
 }
 
 function capitalize(s) {
@@ -1356,6 +1430,113 @@ function buildWildlifeSighting(dateStr, waveCheck, locKey) {
   return `${match.icon ? match.icon + " " : ""}${match.name}: ${match.note}`;
 }
 
+/* ---------- Bite times (solunar) -- 2026-09 ----------
+   Moonrise/moonset/transit/antitransit come from CycleCalcs' /v2/moon API
+   (cyclecalcs.com/api.html) rather than any calculation of our own -- it's
+   computed with Astronomy Engine (MIT-licensed, Don Cross), stated
+   arcminute-class accuracy 1700-2200, free with no key, permissive CORS,
+   and rate limits (300/min, 5000/day) far beyond what this app needs. A
+   live lookup by lat/lon works for any searched location, not just the
+   fixed presets -- an embedded calculation of our own would still have
+   needed to find moon transit/antitransit itself (the trickiest part, and
+   the one thing a plain rise/set library like SunCalc doesn't give you) for
+   no real accuracy gain over a purpose-built astronomy engine, so this is
+   preferred over building that by hand. Verified against a real request
+   (Tod, 2026-09) before wiring this in, after an earlier round of checks
+   here turned out to be hitting a stale cached response rather than the
+   live API -- the schema below is the confirmed real one.
+
+   Informational only, like species timing -- doesn't touch scoring (Tod's
+   call, 2026-09). See fish-coach skill's solunar_theory.md for the theory
+   this is surfacing. Never blocks the main card render: loadMoonTimes never
+   rejects, each day's dropdown starts on "Loading…" and gets patched in
+   independently once its own fetch resolves (see load()), and a 5s abort
+   caps how long a slow or unreachable API can leave that one dropdown
+   stuck on "Loading…". */
+async function loadMoonTimes(lat, lon, dateStr) {
+  const url = `https://www.cyclecalcs.com/v2/moon?lat=${lat}&lon=${lon}&at=${dateStr}&tz=Australia%2FBrisbane`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (e) {
+    console.warn("FishGoNoGo: moon data failed for", dateStr, e);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Major periods (~2hrs, centered on the moon overhead/underfoot moment) and
+// minor periods (~1hr, starting at moonrise/moonset) -- the four solunar
+// bite windows per fish-coach's solunar_theory.md. Reads straight off
+// rise_set.events rather than assuming exactly one of each kind is present --
+// a day can genuinely have zero or two of a given event near its boundaries
+// (the moon's ~24h50m cycle doesn't line up with a 24h civil day), so this
+// stays defensive rather than indexing a fixed shape.
+function buildBiteWindows(moonData) {
+  const events = moonData?.rise_set?.events;
+  if (!Array.isArray(events) || !events.length) return [];
+
+  const windows = [];
+  for (const e of events) {
+    const mins = timeToMinutes(e.instant);
+    if (mins == null) continue;
+    if (e.kind === "upper_transit") {
+      windows.push({ label: "Major (moon overhead)", startMin: wrapMinutes(mins - 60), endMin: wrapMinutes(mins + 60), centerMin: mins });
+    } else if (e.kind === "lower_transit") {
+      windows.push({ label: "Major (moon underfoot)", startMin: wrapMinutes(mins - 60), endMin: wrapMinutes(mins + 60), centerMin: mins });
+    } else if (e.kind === "rise") {
+      windows.push({ label: "Minor (moonrise)", startMin: mins, endMin: wrapMinutes(mins + 60), centerMin: mins });
+    } else if (e.kind === "set") {
+      windows.push({ label: "Minor (moonset)", startMin: mins, endMin: wrapMinutes(mins + 60), centerMin: mins });
+    }
+  }
+  return windows.sort((a, b) => a.startMin - b.startMin);
+}
+
+// Flags a window worth extra attention when its center falls within an hour
+// of sunrise or sunset -- the "call it out when solunar and dawn/dusk line
+// up" note from fish-coach's solunar_theory.md synthesis step.
+function alignsWithDawnDusk(centerMin, sunRiseMin, sunSetMin) {
+  if (sunRiseMin != null && Math.abs(centerMin - sunRiseMin) <= 60) return "dawn";
+  if (sunSetMin != null && Math.abs(centerMin - sunSetMin) <= 60) return "dusk";
+  return null;
+}
+
+/* Builds the "Bite times" dropdown content -- same { html, count } shape as
+   buildSpeciesCommentary, so both slot into renderCard the same way. */
+function buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin) {
+  if (!moonData) return { html: "Bite times unavailable for this day.", count: 0 };
+
+  const windows = buildBiteWindows(moonData);
+  if (!windows.length) return { html: "No moonrise, moonset or transit found for this day.", count: 0 };
+
+  const lines = windows.map(w => {
+    const align = alignsWithDawnDusk(w.centerMin, sunRiseMin, sunSetMin);
+    // A separate flex item (not text appended inside .time) so it can drop
+    // to its own line via .species-line's flex-wrap rather than overflowing
+    // the card at larger text sizes -- see the CSS comment above .align-note.
+    const alignSpan = align ? `<span class="align-note">⭐ near ${align}</span>` : "";
+    return `<div class="species-line"><span class="species-name">${w.label}</span><span class="time">${minutesToClock(w.startMin)}–${minutesToClock(w.endMin)}</span>${alignSpan}</div>`;
+  }).join("");
+
+  let html = `<div class="species-lines">${lines}</div>`;
+
+  const frac = moonData.phase?.illuminated_fraction;
+  if (frac != null) {
+    if (frac >= 0.9) html += `<div class="extra-line">🌕 Near full moon — solunar windows are typically strongest now.</div>`;
+    else if (frac <= 0.1) html += `<div class="extra-line">🌑 Near new moon — solunar windows are typically strongest now.</div>`;
+  }
+
+  html += `<div class="bite-caveat">Approximate, based on solunar theory — a folk heuristic, not settled science. Times from CycleCalcs (Astronomy Engine).</div>`;
+
+  return { html, count: windows.length };
+}
+
 /* Row-by-row checklist -- one line per KPI check, icon + pass/no-data mark +
    description + points. Restored 2026-09 (Tod's call: "change the section
    under the graph back to this layout") after a stint as a condensed
@@ -1397,15 +1578,42 @@ function buildScoringSentence(checks) {
 }
 
 function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayLabel) {
-  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, speciesCommentary, scoringSentence } = result;
+  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, speciesCommentary, scoringSentence } = result;
   // Share data lives on the pill itself (data-share, JSON) rather than a
   // separate button -- see buildShareText/shareCard. NO-DATA days have
   // nothing worth sharing, so the pill stays inert for those.
   const shareAttr = (status !== "NO-DATA" && locationName && dayLabel)
     ? ` data-share="${escapeAttr(JSON.stringify({ loc: locationName, day: dayLabel, date: dateStr, score, status, tempMax, tempMin, tide: tideTimes || null }))}"`
     : "";
-  const tideTimesHTML = tideTimes ? `<div class="tide-times">🕐 ${tideTimes}</div>` : "";
-  const dateTempHTML = `<div class="temp-range">${dateStr}${(tempMax != null || tempMin != null) ? ` · ${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}` : ""}</div>`;
+  // 🌙 (2026-09, Tod's call) rather than 🕐 -- the Scoring dropdown's own
+  // Wave Height row already uses 🌊, so pairing that with a 🌊 here too
+  // would have the same icon meaning two different things on one card. The
+  // moon is what actually drives tides, and nothing else on the card uses it.
+  const tideTimesHTML = tideTimes ? `<div class="tide-times">🌙 ${tideTimes}</div>` : "";
+  // Scoring checklist moved behind a collapsed dropdown (2026-09, Tod's
+  // call) -- stays in its original spot right after the safe-until banner
+  // (it's explaining the score right above it, unlike species/bite times
+  // further down), but starts closed like those two rather than always
+  // open, so it no longer eats card height by default.
+  const scoringDetailsHTML = scoringSentence
+    ? `
+      <details class="scoring-toggle">
+        <summary>Scoring</summary>
+        ${scoringSentence}
+      </details>`
+    : "";
+  // Calendar date dropped from the visible card (2026-09, Tod's call) --
+  // the heading above already names the day (Today/a weekday), and the
+  // exact date still travels in the Share text via dateStr regardless of
+  // what's shown here. ☀️/🌧️ is dynamic (looksRainy), not decorative --
+  // reuses the same dawn/dusk rain read the Rain check already computes,
+  // independent of the "I don't mind light rain" preference (that's about
+  // scoring tolerance, not what's actually forecast).
+  const weatherIcon = looksRainy ? "🌧️" : "☀️";
+  const tempPart = (tempMax != null || tempMin != null)
+    ? `${tempMin != null ? Math.round(tempMin) + "°" : "–"} / ${tempMax != null ? Math.round(tempMax) + "°" : "–"}`
+    : "";
+  const dateTempHTML = `<div class="temp-range">${weatherIcon}${tempPart ? " " + tempPart : ""}</div>`;
   const safeUntilHTML = safeUntil
     ? `<div class="safe-until ${safeUntil.crossHour == null ? "safe-until-good" : ""}">🕒 ${safeUntil.text}${SHOW_WIND_SPARKLINE ? windSparkSVG : ""}</div>`
     : "";
@@ -1422,6 +1630,16 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
         <summary>Species times${speciesCount ? ` (${speciesCount})` : ""}</summary>
         <div class="commentary">${speciesHTML}</div>
       </details>`;
+  // Bite times (solunar) -- unlike species timing, this isn't ready at
+  // render time (it's fetched from CycleCalcs after the grid is already on
+  // screen, see load()), so it always starts on this placeholder and gets
+  // patched in place once that day's lookup resolves. The id is how that
+  // patch finds this exact card again.
+  const biteDetailsHTML = `
+      <details class="bite-toggle" id="biteToggle-${dateStr}">
+        <summary>Bite times</summary>
+        <div class="commentary">Loading…</div>
+      </details>`;
   return `
       <div class="score-row">
         <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
@@ -1429,10 +1647,11 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
       </div>
       ${headingHTML}
       ${dateTempHTML}
-      ${safeUntilHTML}
-      ${scoringSentence || ""}
       ${tideTimesHTML}
-      ${speciesDetailsHTML}`;
+      ${safeUntilHTML}
+      ${scoringDetailsHTML}
+      ${speciesDetailsHTML}
+      ${biteDetailsHTML}`;
 }
 
 function renderTopLocationsCardHTML(top3, loading) {
@@ -1482,6 +1701,7 @@ async function loadTopLocationsCard() {
 }
 
 async function load() {
+  const loadId = ++currentLoadId;
   const select = document.getElementById("locationSelect");
   const key = select.value;
   const loc = LOCATIONS[key];
@@ -1496,7 +1716,6 @@ async function load() {
 
   document.getElementById("cardsGrid").innerHTML =
     `<div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>`;
-  document.getElementById("bestDaySummary").style.display = "none";
 
   try {
     const [weather, marine] = await Promise.all([
@@ -1528,15 +1747,15 @@ async function load() {
       dayResults.push({ i, date, r });
     }
 
+    // "Best day this week" text summary removed 2026-09 (Tod's call) --
+    // redundant with the "Best day" badge and highlighted outline already
+    // drawn on that day's own card below (see the "best" badge/class
+    // applied via bestIdx further down). bestIdx itself stays -- it's still
+    // what drives that badge/outline.
     const scored = dayResults.filter(x => x.r.status !== "NO-DATA");
     let bestIdx = -1;
     if (scored.length) {
-      const best = scored.reduce((a, b) => (b.r.score > a.r.score ? b : a));
-      bestIdx = best.i;
-      const summaryEl = document.getElementById("bestDaySummary");
-      const bestLabel = best.i === 0 ? "Today" : dayName(best.date);
-      summaryEl.textContent = `Best day this week: ${bestLabel} (${best.r.score}/100)`;
-      summaryEl.style.display = "block";
+      bestIdx = scored.reduce((a, b) => (b.r.score > a.r.score ? b : a)).i;
     }
 
     // The generic "what's around this month" wildlife blurb that used to sit
@@ -1564,6 +1783,27 @@ async function load() {
     // than loading just the selected one — the 9th card fills in once it resolves.
     loadTopLocationsCard();
 
+    // Bite times (solunar) -- fired after the grid is already showing wind/
+    // tide/species info, not awaited before it, so CycleCalcs being slow or
+    // unreachable can never delay the info the app actually exists for.
+    // Each day patches in independently as its own lookup resolves. The
+    // loadId check discards a response that comes back after Tod has
+    // already switched to a different location.
+    dayResults.forEach(({ i, date }) => {
+      const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[i]);
+      const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[i]);
+      loadMoonTimes(lat, lon, date).then(moonData => {
+        if (loadId !== currentLoadId) return; // stale -- location changed since this was fired
+        const commentary = buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin);
+        const details = document.getElementById(`biteToggle-${date}`);
+        if (!details) return;
+        const summary = details.querySelector("summary");
+        const body = details.querySelector(".commentary");
+        if (summary) summary.textContent = `Bite times${commentary.count ? ` (${commentary.count})` : ""}`;
+        if (body) body.innerHTML = commentary.html;
+      });
+    });
+
   } catch (e) {
     console.error(e);
     document.getElementById("cardsGrid").innerHTML =
@@ -1587,6 +1827,20 @@ async function load() {
 (function initWavePref() {
   document.getElementById("wavePrefToggle").checked = ignoreWaveHeight();
 })();
+
+// Preferences dropdown (2026-09) starts collapsed, so its summary line is
+// the only thing visible without opening it -- this keeps that line honest
+// about which preferences are actually active, rather than a plain
+// "Preferences" label that could hide a toggle you forgot was on. Called
+// once at load and again on every toggle change, below.
+function updatePreferencesSummary() {
+  const active = [];
+  if (prefersLightRain()) active.push("light rain OK");
+  if (ignoreWaveHeight()) active.push("not on open bay");
+  const el = document.getElementById("preferencesSummary");
+  if (el) el.textContent = active.length ? `Preferences · ${active.join(", ")}` : "Preferences";
+}
+updatePreferencesSummary();
 
 async function searchLocation() {
   const input = document.getElementById("locationSearchInput");
@@ -1642,10 +1896,12 @@ document.getElementById("locationSearchInput").addEventListener("keydown", (e) =
 document.getElementById("locationSelect").addEventListener("change", load);
 document.getElementById("rainPrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(RAIN_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
+  updatePreferencesSummary();
   load();
 });
 document.getElementById("wavePrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(WAVE_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
+  updatePreferencesSummary();
   load();
 });
 
