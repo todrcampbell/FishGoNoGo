@@ -81,14 +81,34 @@
     cursor: pointer; flex-shrink: 0;
   }
   #locationSearchBtn:active { background: #26313f; }
-  .compare-item {
-    background: linear-gradient(135deg, #1f2937, #111827); border-radius: 12px;
-    padding: 12px 16px; margin-bottom: 10px; max-width: 420px;
-    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  /* Week chip grid (2026-09, Tod's call) -- replaces the old "Top spots this
+     week" card (compare-item/-rank/-info/-score, now removed) in the same
+     #topLocationsCard-shaped slot at the start of the forecast row. Fits all
+     8 days without scrolling inside the card itself; the row it sits in
+     still scrolls as a whole, same as before. Went through a square 2x4 grid
+     before landing here (Tod's call each time): now a single column of full-
+     width rows, day name and score run across the same row rather than
+     stacked in a square tile -- top to bottom in date order (Today first).
+     A trend sparkline used to sit below the grid; Tod's call was to drop it
+     rather than fix its sizing, so #weekChipCard instead centers the list
+     itself in whatever height the row stretches it to (see #weekChipCard
+     below), both horizontally and vertically. */
+  #weekChipCard { display: flex; align-items: center; justify-content: center; }
+  .chip-grid { display: grid; grid-template-columns: 1fr; gap: 6px; width: 100%; }
+  .chip {
+    border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
   }
-  .compare-rank { font-size: 20px; font-weight: bold; color: #6ee7b7; min-width: 24px; }
-  .compare-info { flex: 1; font-size: 14px; }
-  .compare-score { font-size: 18px; font-weight: bold; }
+  .chip.GO { background: rgba(52, 211, 153, 0.16); }
+  .chip.MAYBE { background: rgba(252, 211, 77, 0.16); }
+  .chip.NO-GO { background: rgba(248, 113, 113, 0.16); }
+  .chip.NO-DATA { background: rgba(156, 163, 175, 0.16); }
+  .chip .d { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #9ca3af; }
+  .chip .s { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .chip.GO .s { color: #6ee7b7; }
+  .chip.MAYBE .s { color: #fcd34d; }
+  .chip.NO-GO .s { color: #fca5a5; }
+  .chip.NO-DATA .s { color: #9ca3af; }
   .card {
     background: linear-gradient(135deg, #1f2937, #111827);
     padding: 18px; margin: 10px 0; border-radius: 14px;
@@ -453,6 +473,14 @@ function dayName(dateStr) {
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 12));
   return dt.toLocaleDateString("en-AU", { weekday: "long", timeZone: "UTC" });
+}
+
+// Short form for the week chip grid (2026-09) -- "Wed" rather than
+// "Wednesday", since a chip only has ~50px to work with.
+function dayAbbrev(dateStr) {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  return dt.toLocaleDateString("en-AU", { weekday: "short", timeZone: "UTC" });
 }
 
 function compass(deg) {
@@ -1758,50 +1786,23 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
       ${biteDetailsHTML}`;
 }
 
-function renderTopLocationsCardHTML(top3, loading) {
-  if (loading) return `<div class="commentary">Checking all locations…</div>`;
-  if (!top3.length) return `<div class="commentary">No data available right now.</div>`;
-  return top3.map((c, i) => `
-    <div class="compare-item" style="margin:0 0 8px 0;">
-      <div class="compare-rank">${i + 1}</div>
-      <div class="compare-info">${c.locationName}<br><span style="color:#9ca3af;">${dayName(c.date)} · ${c.date}</span></div>
-      <div class="compare-score">${c.score}<span style="font-size:12px;font-weight:normal;color:#9ca3af;">/100</span></div>
-    </div>
-  `).join("");
-}
-
-/* Scans every preset location across the next 8 days and finds the top 3 by score.
-   Runs automatically alongside the main location's load, rather than behind a
-   button — the scan is fast enough not to be worth gating. */
-async function loadTopLocationsCard() {
-  const allCandidates = [];
-  await Promise.all(Object.entries(LOCATIONS).map(async ([key, loc]) => {
-    try {
-      const [weather, marine] = await Promise.all([
-        loadWeather(loc.lat, loc.lon),
-        fetch(
-          `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
-          `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
-          `&timezone=Australia%2FBrisbane&forecast_days=8`
-        ).then(r => r.json())
-      ]);
-      if (!weather?.hourly?.wind_speed_10m) return;
-      const points = tidePointsFromMarine(marine);
-      for (let day = 0; day <= 7; day++) {
-        const date = weather.daily.time?.[day];
-        if (!date) continue;
-        const r = computeDayScore(weather, marine, points, day);
-        if (r.status === "NO-DATA") continue;
-        allCandidates.push({ locationName: loc.name, date, score: r.score, status: r.status });
-      }
-    } catch (e) {
-      console.warn("Top-locations scan failed for", key, e);
-    }
-  }));
-
-  allCandidates.sort((a, b) => b.score - a.score);
-  const body = document.getElementById("topLocationsBody");
-  if (body) body.innerHTML = renderTopLocationsCardHTML(allCandidates.slice(0, 3), false);
+/* Week chip grid (2026-09, Tod's call) -- replaces the old "Top spots this
+   week" card and the loadTopLocationsCard() scan it needed (that function
+   fetched every preset location just to find a top 3; removed entirely, see
+   below). This only needs the SAME location's own 8 days, already computed
+   synchronously in load() as dayResults, so the grid renders immediately
+   with the rest of the row -- no async fetch, no loading state, one fewer
+   network round trip per preset location on every load(). No card heading:
+   this sits directly under the page's own "This Week" <h2>, so repeating
+   that text here would just be noise. Each chip carries data-jump so the
+   delegated click listener below can scroll the row to that day's own card. */
+function renderWeekChipGridHTML(dayResults) {
+  const chips = dayResults.map(({ i, date, r }) => {
+    const label = i === 0 ? "Today" : dayAbbrev(date);
+    const scoreText = r.status === "NO-DATA" ? "–" : r.score;
+    return `<div class="chip ${r.status}" data-jump="${date}"><span class="d">${label}</span><span class="s">${scoreText}</span></div>`;
+  }).join("");
+  return `<div class="chip-grid">${chips}</div>`;
 }
 
 async function load() {
@@ -1866,26 +1867,23 @@ async function load() {
     // under this list was dropped 2026-09 (Tod's call) -- it duplicated the
     // per-day calm-water wildlife note that already appears on individual
     // day cards, and having both was redundant rather than additive.
-    let cardsHTML = `<div class="forecast-card" id="topLocationsCard">
-      <h3 style="margin:0 0 10px 0;font-size:1rem;">Top spots this week</h3>
-      <div id="topLocationsBody">${renderTopLocationsCardHTML([], true)}</div>
+    let cardsHTML = `<div class="forecast-card" id="weekChipCard">
+      ${renderWeekChipGridHTML(dayResults)}
     </div>`;
 
     dayResults.forEach(({ i, date, r }) => {
       const label = i === 0 ? "Today" : dayName(date);
       const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}</h3>`;
       const isBest = i === bestIdx;
-      cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}">
+      // id lets a chip in the week grid above jump straight to this day's
+      // own card (see the delegated click listener below).
+      cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}" id="dayCard-${date}">
         ${isBest ? '<span class="best-badge">Best day</span>' : ""}
         ${renderCard(date, r, "", heading, name, label)}
       </div>`;
     });
 
     document.getElementById("cardsGrid").innerHTML = cardsHTML;
-
-    // Runs after the main grid renders, since scanning every location takes longer
-    // than loading just the selected one — the 9th card fills in once it resolves.
-    loadTopLocationsCard();
 
     // Bite times (solunar) and Commentary -- fired after the grid is already
     // showing wind/tide/species info, not awaited before it, so CycleCalcs
@@ -1990,16 +1988,25 @@ async function searchLocation() {
   }
 }
 
-// Delegated (not per-pill) since #cardsGrid's contents are replaced wholesale
-// on every load()/re-render -- one listener here survives that, individual
-// ones on each pill wouldn't.
+// Delegated (not per-pill/per-chip) since #cardsGrid's contents are replaced
+// wholesale on every load()/re-render -- one listener here survives that,
+// individual ones on each pill or chip wouldn't.
 document.getElementById("cardsGrid").addEventListener("click", (e) => {
   const pill = e.target.closest(".status-pill[data-share]");
-  if (!pill) return;
-  let data;
-  try { data = JSON.parse(pill.dataset.share); }
-  catch (e2) { return; }
-  shareCard(pill, data);
+  if (pill) {
+    let data;
+    try { data = JSON.parse(pill.dataset.share); }
+    catch (e2) { return; }
+    shareCard(pill, data);
+    return;
+  }
+  // Week chip grid (2026-09, Tod's call) -- tapping a day jumps the row to
+  // that day's own card rather than just being decorative.
+  const chip = e.target.closest(".chip[data-jump]");
+  if (chip) {
+    const target = document.getElementById(`dayCard-${chip.dataset.jump}`);
+    if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  }
 });
 
 document.getElementById("locationSearchBtn").addEventListener("click", searchLocation);
