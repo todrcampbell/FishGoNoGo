@@ -200,19 +200,22 @@
      (which now also holds Species times underneath it) and "Commentary"
      (which now also holds the Scoring checklist underneath it). The
      per-card Scoring and Species times dropdowns this used to include were
-     folded into those two and no longer exist on their own. */
-  .species-toggle, .bite-toggle, .commentary-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
-  .species-toggle summary, .bite-toggle summary, .commentary-toggle summary {
+     folded into those two and no longer exist on their own. .session-toggle
+     (2026-09) joined the same shared rule set when Session Plan was
+     converted from a standalone button to a matching dropdown, for
+     consistency with these two. */
+  .species-toggle, .bite-toggle, .commentary-toggle, .session-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .species-toggle summary, .bite-toggle summary, .commentary-toggle summary, .session-toggle summary {
     cursor: pointer; list-style: none; font-size: 13px; color: #e5e7eb;
     display: flex; align-items: center; gap: 7px; padding: 2px 0;
   }
-  .species-toggle summary::-webkit-details-marker, .bite-toggle summary::-webkit-details-marker, .commentary-toggle summary::-webkit-details-marker { display: none; }
-  .species-toggle summary::before, .bite-toggle summary::before, .commentary-toggle summary::before {
+  .species-toggle summary::-webkit-details-marker, .bite-toggle summary::-webkit-details-marker, .commentary-toggle summary::-webkit-details-marker, .session-toggle summary::-webkit-details-marker { display: none; }
+  .species-toggle summary::before, .bite-toggle summary::before, .commentary-toggle summary::before, .session-toggle summary::before {
     content: "▸"; display: inline-block; color: #9ca3af; font-size: 11px;
     transition: transform 0.15s ease;
   }
-  .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .commentary-toggle[open] summary::before { transform: rotate(90deg); }
-  .species-toggle .commentary, .bite-toggle .commentary, .commentary-toggle .commentary { margin: 8px 0 0 0; }
+  .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .commentary-toggle[open] summary::before, .session-toggle[open] summary::before { transform: rotate(90deg); }
+  .species-toggle .commentary, .bite-toggle .commentary, .commentary-toggle .commentary, .session-toggle .commentary { margin: 8px 0 0 0; }
   /* Bite-times alignment marker (2026-09 fix): previously appended as plain
      text inside .time, which has white-space:nowrap -- fine for a short
      clock range, but combined with "⭐ near dawn/dusk" at a larger
@@ -234,19 +237,14 @@
     border-radius: 8px; padding: 8px 10px; margin: 4px 0 10px 0;
   }
   .safe-until-good { color: #6ee7b7; background: rgba(52, 211, 153, 0.08); }
-  /* Session Plan (2026-09, Tod's call) -- a button + reveal panel rather
-     than another <details> dropdown, matching "click a button and it flips
-     to show a plan" from how this was discussed. Button styled like a
-     small secondary action, not a link or a dropdown summary, since it's
-     the only tap target on the card that isn't one of those two. */
-  .session-plan-btn {
-    display: block; width: 100%; margin-top: 10px; padding: 7px 10px;
-    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px; color: #e5e7eb; font-size: 12.5px; font-weight: 600;
-    font-family: inherit; cursor: pointer; text-align: center;
-  }
-  .session-plan-btn:active { background: rgba(255, 255, 255, 0.12); }
-  .session-plan { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  /* Session Plan (2026-09, Tod's call) -- originally a standalone button +
+     reveal panel ("click a button and it flips to show a plan"), converted
+     to a <details class="session-toggle"> dropdown (see the shared
+     .species-toggle/.bite-toggle/.commentary-toggle/.session-toggle rules
+     above) once the card had two other expandable sections and a third,
+     differently-styled tap target started reading as inconsistent (Tod's
+     call). Native <details> also means the open/close toggle itself needs
+     no JS -- only the Morning/Evening/Custom tab-switching below it does. */
   .session-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
   .session-tab {
     flex: 1; text-align: center; padding: 5px 0; border-radius: 6px;
@@ -264,6 +262,23 @@
      the abstract. */
   .phase-row.current { background: rgba(96, 165, 250, 0.1); border-radius: 6px; padding: 5px 7px; margin: 0 -7px 7px; }
   .phase-row .phase-marker { color: #93c5fd; font-size: 11px; white-space: nowrap; }
+  /* Custom session tab (2026-09, Tod's call) -- lets Tod type any start
+     time and see that time's own tide phases, to test the best time to go
+     rather than only the built-in dawn/dusk sessions. Deliberately NOT the
+     page-level input[type="time"] styling (that one is sized for the
+     full-page "Plan a Crossing" form -- 48px tall, 16px text -- far too
+     large to sit inside a day card), hence the dedicated compact class. */
+  .session-time-label { font-size: 11px; color: #9ca3af; margin: 0 0 4px 0; display: block; }
+  .session-time-input {
+    padding: 5px 8px; font-size: 13px; min-height: unset;
+    background: rgba(255, 255, 255, 0.06); color: #e5e7eb; border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.14); width: auto; max-width: 120px;
+    color-scheme: dark; margin-bottom: 8px;
+  }
+  .custom-session-result:empty::before {
+    content: "Pick a time above to see its tide phases."; font-size: 12px;
+    color: #9ca3af; font-style: italic;
+  }
   .pass { color: #4ade80; }
   .fail { color: #ef4444; }
   .unknown { color: #9ca3af; font-style: italic; }
@@ -540,6 +555,10 @@ const SHOW_WIND_SPARKLINE = true;
 // counter lets that stale response recognise itself as stale and no-op,
 // instead of overwriting the new location's card with the old one's data.
 let currentLoadId = 0;
+// Tide turns from the most recent load(), kept around so the Custom session
+// tab (2026-09) can compute a live plan for whatever time Tod types in,
+// without re-fetching or re-scanning the tide data on every keystroke.
+let lastAllTideTurns = [];
 
 function dayName(dateStr) {
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
@@ -795,6 +814,10 @@ const PHASE_AREAS = {
   Slowing: "Flats, shallow water, deep holes"
 };
 
+// Default value for the Custom session tab's start-time input -- 3pm, Tod's
+// own "3pm run-out" example from early in this feature's design discussion.
+const CUSTOM_SESSION_DEFAULT = "15:00";
+
 // Absolute minutes since a fixed epoch, so a time on one calendar day
 // compares correctly against a time on another -- needed because the tide
 // leg containing dawn can start the evening before (a low at 11:40pm
@@ -839,17 +862,24 @@ function findSessionLeg(allTurns, targetAbs) {
 // Slack/Light/Peak/Slowing boundaries as fractions of the LEG'S OWN actual
 // duration (real tide legs vary, rarely exactly 6 hours) -- 1/6, 2/6, 4/6,
 // 6/6, matching the source guide's "1st hour / 2nd hour / 3rd-4th hours /
-// 5th-6th hours" split of a nominal 6-hour cycle.
+// 5th-6th hours" split of a nominal 6-hour cycle. Rounded to the nearest
+// whole minute (2026-09 fix, caught while building the Custom tab) -- a leg
+// duration not evenly divisible by 6 otherwise hands minutesToClock a
+// fractional minute (e.g. "5:1.67am"), since it only wraps hours/minutes
+// and never expected a non-integer input.
 function buildTidePhases(startAbs, endAbs) {
   const dur = endAbs - startAbs;
-  const bounds = [startAbs, startAbs + dur / 6, startAbs + dur / 3, startAbs + dur * 2 / 3, endAbs];
+  const bounds = [startAbs, startAbs + dur / 6, startAbs + dur / 3, startAbs + dur * 2 / 3, endAbs].map(Math.round);
   return ["Slack", "Light", "Peak", "Slowing"].map((name, i) => ({ name, startAbs: bounds[i], endAbs: bounds[i + 1] }));
 }
 
-// One session (Morning, built around dawn, or Evening, built around dusk)
-// for one day. Null if there isn't enough tide data to find the full leg
-// (both bracketing turns) -- shown as "not enough data" rather than guessed
-// at, same philosophy as tideNearSun/species timing elsewhere in this file.
+// One session (Morning, built around dawn; Evening, built around dusk; or
+// Custom, built around whatever time Tod types into that tab) for one day.
+// Null if there isn't enough tide data to find the full leg (both
+// bracketing turns) -- shown as "not enough data" rather than guessed at,
+// same philosophy as tideNearSun/species timing elsewhere in this file.
+// Reused as-is for the Custom tab (2026-09) -- it already takes any
+// targetMin, not just sunrise/sunset, so no separate code path was needed.
 function buildSession(allTurns, dateStr, targetMin, label) {
   if (targetMin == null || allTurns.length < 2) return null;
   const targetAbs = absMinutesFromDateStr(dateStr, targetMin);
@@ -858,10 +888,14 @@ function buildSession(allTurns, dateStr, targetMin, label) {
   const phases = buildTidePhases(leg.start.abs, leg.end.abs);
   let phaseIdx = phases.findIndex(p => targetAbs >= p.startAbs && targetAbs < p.endAbs);
   if (phaseIdx === -1) phaseIdx = phases.length - 1;
+  // Custom has no dawn/dusk of its own to name -- just show the time itself.
+  const targetLabel = label === "Custom"
+    ? minutesToClock(targetAbs)
+    : `${label === "Morning" ? "dawn" : "dusk"} ${minutesToClock(targetAbs)}`;
   return {
     label,
     rangeLabel: `${leg.start.type === "high" ? "High" : "Low"} ${minutesToClock(leg.start.abs)} → ${leg.end.type === "high" ? "High" : "Low"} ${minutesToClock(leg.end.abs)}`,
-    targetLabel: `${label === "Morning" ? "dawn" : "dusk"} ${minutesToClock(targetAbs)}`,
+    targetLabel,
     phaseIdx,
     phases: phases.map(p => ({ name: p.name, timeLabel: `${minutesToClock(p.startAbs)}–${minutesToClock(p.endAbs)}`, areas: PHASE_AREAS[p.name] }))
   };
@@ -1969,48 +2003,62 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
       ${sessionPlanHTML}`;
 }
 
-// Session Plan button + reveal panel (2026-09, Tod's call) -- a button
-// rather than another <details> dropdown, since "click and it flips to show
-// a plan" was the framing from the start; toggled in place (not a literal
-// 3D flip) to avoid fighting the horizontally snap-scrolling row. Morning
-// and Evening (when both exist for a day) render as two panels up front,
-// switched with plain tab buttons rather than re-rendering from JS state --
-// simpler and more robust than tracking which session is "selected" in
-// script. See the delegated click listener near the bottom of this file for
-// both the toggle and the tab-switch behaviour.
-function renderSessionPlanHTML(dateStr, sessionPlan) {
-  if (!sessionPlan || (!sessionPlan.morning && !sessionPlan.evening)) return "";
-  const sessions = [sessionPlan.morning, sessionPlan.evening].filter(Boolean);
-  const defaultKey = sessions[0].label.toLowerCase();
-
-  const renderPhases = (session) => session.phases.map((p, idx) => {
+// Session Plan panel (2026-09, Tod's call) -- a <details class="session-toggle">
+// dropdown matching Commentary/Bite times (originally a standalone button;
+// converted for consistency + space once the card had three expandable
+// sections, see the CSS comment above .session-tabs). Morning and Evening
+// (when both exist for a day), plus an always-present Custom tab, render as
+// pre-built panels up front, switched with plain tab buttons rather than
+// re-rendering from JS state -- simpler and more robust than tracking which
+// session is "selected" in script. Custom starts empty and fills in once
+// its time input fires or its tab is first opened (see the delegated
+// listeners near the bottom of this file), since it's computed live from
+// whatever time Tod types in rather than baked in at load() time.
+function renderPhaseRowsHTML(session) {
+  return session.phases.map((p, idx) => {
     const isCurrent = idx === session.phaseIdx;
     return `<div class="phase-row${isCurrent ? " current" : ""}">
         <span class="phase-name">${p.name}</span> <span class="phase-time">${p.timeLabel}</span> — ${p.areas}${isCurrent ? ` <span class="phase-marker">📍 ${session.targetLabel}</span>` : ""}
       </div>`;
   }).join("");
+}
+
+function renderSessionPlanHTML(dateStr, sessionPlan) {
+  if (!sessionPlan || (!sessionPlan.morning && !sessionPlan.evening)) return "";
+  const sessions = [sessionPlan.morning, sessionPlan.evening].filter(Boolean);
+  const defaultKey = sessions[0].label.toLowerCase();
 
   const panelsHTML = sessions.map(s => {
     const key = s.label.toLowerCase();
     return `<div class="session-phases" data-session="${key}"${key !== defaultKey ? " hidden" : ""}>
         <div class="session-range">${s.rangeLabel}</div>
-        ${renderPhases(s)}
+        ${renderPhaseRowsHTML(s)}
       </div>`;
   }).join("");
 
-  const tabsHTML = sessions.length > 1
-    ? `<div class="session-tabs">${sessions.map(s => {
-        const key = s.label.toLowerCase();
-        return `<div class="session-tab${key === defaultKey ? " active" : ""}" data-tab="${key}">${s.label}</div>`;
-      }).join("")}</div>`
-    : "";
+  const customPanelHTML = `<div class="session-phases" data-session="custom" hidden>
+      <label class="session-time-label" for="customTime-${dateStr}">Start fishing time</label>
+      <input type="time" class="session-time-input" id="customTime-${dateStr}" data-custom-time="${dateStr}" value="${CUSTOM_SESSION_DEFAULT}">
+      <div class="custom-session-result" id="customResult-${dateStr}"></div>
+    </div>`;
+
+  // Tabs always render now -- Custom is always a second (or third) option,
+  // even on a day where only one of Morning/Evening has data.
+  const tabKeys = [...sessions.map(s => s.label.toLowerCase()), "custom"];
+  const tabLabels = [...sessions.map(s => s.label), "Custom"];
+  const tabsHTML = `<div class="session-tabs">${tabKeys.map((key, idx) =>
+      `<div class="session-tab${key === defaultKey ? " active" : ""}" data-tab="${key}">${tabLabels[idx]}</div>`
+    ).join("")}</div>`;
 
   return `
-      <button type="button" class="session-plan-btn" data-plan-toggle="${dateStr}">🕐 Session Plan</button>
-      <div class="session-plan" id="sessionPlan-${dateStr}" hidden>
-        ${tabsHTML}
-        ${panelsHTML}
-      </div>`;
+      <details class="session-toggle" id="sessionToggle-${dateStr}">
+        <summary>Session Plan</summary>
+        <div class="commentary">
+          ${tabsHTML}
+          ${panelsHTML}
+          ${customPanelHTML}
+        </div>
+      </details>`;
 }
 
 /* Week chip grid (2026-09, Tod's call) -- replaces the old "Top spots this
@@ -2074,6 +2122,7 @@ async function load() {
     // midnight boundary, so it scans across ALL 8 fetched days of tide
     // points at once rather than one calendar day at a time.
     const allTideTurns = findAllTideTurns(qldPoints);
+    lastAllTideTurns = allTideTurns;
     const dayResults = [];
     for (let i = 0; i <= 7; i++) {
       const date = weather.daily.time[i];
@@ -2241,22 +2290,47 @@ document.getElementById("cardsGrid").addEventListener("click", (e) => {
     if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
     return;
   }
-  // Session Plan (2026-09, Tod's call) -- button toggles the reveal panel;
-  // tabs (when a day has both Morning and Evening) just show/hide the
-  // matching pre-rendered .session-phases block, no re-render needed.
-  const planBtn = e.target.closest(".session-plan-btn[data-plan-toggle]");
-  if (planBtn) {
-    const panel = document.getElementById(`sessionPlan-${planBtn.dataset.planToggle}`);
-    if (panel) panel.hidden = !panel.hidden;
-    return;
-  }
+  // Session Plan (2026-09, Tod's call) -- the dropdown itself opens/closes
+  // natively now (it's a <details>, see .session-toggle); this only handles
+  // the Morning/Evening/Custom tabs inside it, showing/hiding the matching
+  // pre-rendered .session-phases block, no re-render needed. Opening the
+  // Custom tab also computes its result immediately from whatever time is
+  // already sitting in its input, so it never shows blank on first open.
   const tab = e.target.closest(".session-tab[data-tab]");
   if (tab) {
-    const panel = tab.closest(".session-plan");
-    if (!panel) return;
-    panel.querySelectorAll(".session-tab").forEach(t => t.classList.toggle("active", t === tab));
-    panel.querySelectorAll(".session-phases").forEach(sp => { sp.hidden = sp.dataset.session !== tab.dataset.tab; });
+    const container = tab.closest(".session-toggle");
+    if (!container) return;
+    container.querySelectorAll(".session-tab").forEach(t => t.classList.toggle("active", t === tab));
+    container.querySelectorAll(".session-phases").forEach(sp => { sp.hidden = sp.dataset.session !== tab.dataset.tab; });
+    if (tab.dataset.tab === "custom") {
+      const input = container.querySelector("[data-custom-time]");
+      if (input) updateCustomSession(input.dataset.customTime, input.value);
+    }
+    return;
   }
+});
+
+// Custom session tab (2026-09, Tod's call) -- recomputed live from
+// lastAllTideTurns on every keystroke/change, not baked in at load() time,
+// since it depends on a time Tod can freely edit per card. Delegated like
+// the click listener above, for the same reason (cards are replaced
+// wholesale on every load()).
+function updateCustomSession(dateStr, timeValue) {
+  const resultEl = document.getElementById(`customResult-${dateStr}`);
+  if (!resultEl) return;
+  const parts = (timeValue || "").split(":");
+  const targetMin = parts.length === 2 ? parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10) : NaN;
+  if (Number.isNaN(targetMin)) { resultEl.innerHTML = ""; return; }
+  const session = buildSession(lastAllTideTurns, dateStr, targetMin, "Custom");
+  resultEl.innerHTML = session
+    ? `<div class="session-range">${session.rangeLabel}</div>${renderPhaseRowsHTML(session)}`
+    : `<div class="unknown">Not enough tide data to plan that time.</div>`;
+}
+
+document.getElementById("cardsGrid").addEventListener("input", (e) => {
+  const input = e.target.closest("[data-custom-time]");
+  if (!input) return;
+  updateCustomSession(input.dataset.customTime, input.value);
 });
 
 document.getElementById("locationSearchBtn").addEventListener("click", searchLocation);
