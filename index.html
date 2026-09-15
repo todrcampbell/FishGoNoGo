@@ -234,6 +234,36 @@
     border-radius: 8px; padding: 8px 10px; margin: 4px 0 10px 0;
   }
   .safe-until-good { color: #6ee7b7; background: rgba(52, 211, 153, 0.08); }
+  /* Session Plan (2026-09, Tod's call) -- a button + reveal panel rather
+     than another <details> dropdown, matching "click a button and it flips
+     to show a plan" from how this was discussed. Button styled like a
+     small secondary action, not a link or a dropdown summary, since it's
+     the only tap target on the card that isn't one of those two. */
+  .session-plan-btn {
+    display: block; width: 100%; margin-top: 10px; padding: 7px 10px;
+    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px; color: #e5e7eb; font-size: 12.5px; font-weight: 600;
+    font-family: inherit; cursor: pointer; text-align: center;
+  }
+  .session-plan-btn:active { background: rgba(255, 255, 255, 0.12); }
+  .session-plan { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  .session-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .session-tab {
+    flex: 1; text-align: center; padding: 5px 0; border-radius: 6px;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
+    background: rgba(255, 255, 255, 0.04); color: #9ca3af; cursor: pointer;
+  }
+  .session-tab.active { background: rgba(96, 165, 250, 0.16); color: #93c5fd; }
+  .session-range { font-size: 11px; color: #9ca3af; margin-bottom: 8px; }
+  .phase-row { font-size: 12.5px; margin-bottom: 7px; line-height: 1.45; color: #e5e7eb; }
+  .phase-row .phase-name { font-weight: 700; }
+  .phase-row .phase-time { color: #9ca3af; font-variant-numeric: tabular-nums; }
+  /* The phase dawn/dusk actually falls in, highlighted -- the whole point
+     of a per-day Session Plan over the static reference dropdown is showing
+     WHERE in the cycle today's dawn/dusk lands, not just the four phases in
+     the abstract. */
+  .phase-row.current { background: rgba(96, 165, 250, 0.1); border-radius: 6px; padding: 5px 7px; margin: 0 -7px 7px; }
+  .phase-row .phase-marker { color: #93c5fd; font-size: 11px; white-space: nowrap; }
   .pass { color: #4ade80; }
   .fail { color: #ef4444; }
   .unknown { color: #9ca3af; font-style: italic; }
@@ -374,8 +404,50 @@
       </div>
     </details>
 
-    <!-- Preferences holds live toggle state (unlike the reference-only
-         dropdown above), so its summary line reflects which preferences are
+    <!-- Tide-phase strategy reference (2026-09, Tod's call) -- condensed from
+         a tidal-current guide Tod uploaded ("Estuary Excellence"), rewritten
+         here in the app's own words rather than copied from the source.
+         Reference-only like the KPI dropdown above it (no live state), same
+         .species-toggle treatment, same margin-top:22px spacing pattern as
+         Preferences below it. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Fishing the Tide by Phase</summary>
+      <div class="commentary">
+        <div class="kpi-item"><strong>Hour 1 — slack water.</strong> Current is at its weakest right as the tide turns. Work deep holes and channels — water that's normally too much current to fish properly is calm enough now to present a bait or lure with precision.</div>
+        <div class="kpi-item"><strong>Hour 2 — light movement.</strong> Current starts building. Fish begin shifting position: off the flats on the run-out, onto them on the run-in. Focus on drop-offs and the edges of sand flats — prime ambush spots for flathead, bream and whiting, especially a soft plastic worked along the drop.</div>
+        <div class="kpi-item"><strong>Hours 3–4 — peak flow.</strong> Current is at its strongest for the cycle. Fish hold at current breaks near structure — jetties, pontoons, snags, creek mouths — where they can feed without fighting the full run. These are the best ambush points for predatory species all cycle.</div>
+        <div class="kpi-item"><strong>Hours 5–6 — slowing again.</strong> As flow eases, flats, shallows and deep holes all turn back on. Watch tidal range in your system: bigger-range northern estuaries can drain a flat completely, while smaller-range southern systems tend to hold enough water to keep fishing it. A clean run-out over the flats here can produce a standout session on whiting, bream and flathead, especially on surface lures.</div>
+        <div class="kpi-item"><strong>Putting it together.</strong> Stack bite time, tide stage and location rather than picking one. Worked example: an 8am minor bite time with the tide turning at 7:30am suggests starting around 6:30–7am in a deep hole (hour 1), then moving to a nearby drop-off about an hour later as the current builds (hour 2).</div>
+        <div class="kpi-item">General tidal-current theory, not tied to this app's live data or any specific estuary — a framework to adapt to your own spot, not a rule.</div>
+      </div>
+    </details>
+
+    <!-- Estuary structure guide (2026-09, Tod's call) -- condensed from
+         Module 2 of the same "Estuary Excellence" guide, rewritten here in
+         the app's own words. Reference-only, same .species-toggle treatment
+         and spacing as the two dropdowns above it. The .sub-label divider
+         (already used inside the per-card Bite times/Commentary dropdowns
+         for their second section) marks where the two general-technique
+         entries start, since this dropdown's structure-type list is the
+         "primary" content its <summary> names. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Estuary Structure Guide</summary>
+      <div class="commentary">
+        <div class="kpi-item"><strong>Deep holes.</strong> Best at slack water — top or bottom of the tide — when current is weak enough for a bait or lure to actually reach bottom; mid-tide current usually beats you. Find them with a sounder. Mulloway and flathead are the prime targets, plus bream and whiting — drift the boat over the hole bouncing soft plastics or vibes along the bottom.</div>
+        <div class="kpi-item"><strong>The flats.</strong> Best during the last 2–3 hours of the run-out, regardless of tide size — shallow sand that looks barren but holds plenty of baitfish, and big fish hunt it hard, especially around high tide. Flathead, whiting, bream and even salmon show up here, often in very shallow water. Surface lures — poppers, glide baits, bent minnows — are the standout technique, with visual strikes to match.</div>
+        <div class="kpi-item"><strong>Channels.</strong> The main flow paths in and out of the estuary (marked by the red/green buoys) — productive at the right time but often unfishable once the current's really running, so fish them at slack tide. Best results tend to be at the edges, near adjacent structure — moored boats, jetties, back eddies, creek mouths — with 2–3 inch soft plastic grubs or soft vibes and accurate casting around the cover.</div>
+        <div class="kpi-item"><strong>Breakwalls.</strong> Estuary-entrance structure that shelters kingfish, mulloway, tailor, salmon, bream and drummer — often sited on naturally deep (sometimes dredged) water, making them reliable fish-holding zones. The turn of the tide is usually most productive; strong current through a narrow entrance can still make it unfishable even on a neap tide. Land-based fishing here gets dangerous in rough conditions.</div>
+        <div class="kpi-item"><strong>Jetties &amp; pontoons.</strong> Reliable structure for bream and mangrove jack, thanks to the baitfish, weed and crustaceans they collect. Best around peak high tide or during strong tidal flow, when the deeper water and reduced shoreline exposure count for more. Cast up-current and let a soft plastic drift naturally into the structure, where fish sit facing into the current waiting to ambush — jacks especially hit hard and will try to drag you straight back into the structure.</div>
+        <div class="kpi-item"><strong>Tree snags.</strong> From full mangrove systems down to a single fallen tree — shelter and food either way. The productive window is usually the last hour of the run-out into the first hour of the run-in, as baitfish leave the flats and gather around the snags, drawing predators in behind them. Hard-bodies and soft plastics both work; keep to spots that still hold enough depth as the tide drops.</div>
+        <div class="kpi-item"><strong>Weed beds.</strong> Among the most productive structure on the east coast for flathead, bream and whiting, especially where weed and sand patches mix. Suspending hard-bodies twitched with pauses, lightly weighted soft plastics hopped through the weed and paused over sand, and surface poppers (even in water as shallow as 500mm) all produce — worth persisting with despite the snag risk.</div>
+        <div class="sub-label">General technique</div>
+        <div class="kpi-item"><strong>Reading the estuary.</strong> Look for signs of food, not just fish — weed, oysters and crustaceans point to bream, a flathead-shaped "lay" in the sand shows where one's been sitting. Low tide around a full or new moon (the lowest water of the cycle) is the best time to scout a spot, since it exposes drop-offs, rock bars and other structure you'd never see once it's covered. Even odd structure — anything that breaks the current and holds food — is worth a cast.</div>
+        <div class="kpi-item"><strong>Match the hatch.</strong> Pick a bait or lure close in size, shape and colour to what's actually being eaten right then — watch what baitfish are getting smashed on the surface, or check the stomach contents of anything you catch for a direct clue to what to switch to next.</div>
+      </div>
+    </details>
+
+    <!-- Preferences holds live toggle state (unlike the two reference-only
+         dropdowns above), so its summary line reflects which preferences are
          actually on right now (see updatePreferencesSummary()) rather than
          staying a plain, uninformative label while collapsed. -->
     <details class="species-toggle" style="margin-top:22px;">
@@ -698,6 +770,115 @@ function findQldTideTurns(points, dayStr) {
     else if (cur < prev && cur <= next) turns.push({ type: "low", minutes: dayPts[i].minutes });
   }
   return turns;
+}
+
+/* ---------- Session Plan (tide-phase based, 2026-09, Tod's call) ----------
+   Turns the generic "Slack/Light/Peak/Slowing" tide-phase framework (already
+   shown as static reference text in the "Fishing the Tide by Phase" dropdown)
+   into a LIVE, computed plan for one specific day: which of that day's tide
+   legs actually contains dawn (or dusk), what real clock time each of that
+   leg's four phases starts, and which phase dawn/dusk itself falls in.
+   Deliberately scoped to ONE leg per session (whichever leg dawn/dusk falls
+   inside), not the whole day's 3-4 turns -- an earlier one-line-per-turn
+   version read as repetitive (Tod, 2026-09), since Slack's and Light's
+   advice doesn't change by which turn it is; only the Peak/Slowing timing
+   within the session's own leg is actually worth surfacing day to day. No
+   species attached, by Tod's call -- structure and timing only. */
+
+// Same four "Best Areas" the static reference dropdown already lists per
+// phase -- kept as one shared source of truth rather than duplicating the
+// wording in two places.
+const PHASE_AREAS = {
+  Slack: "Deep holes, channels",
+  Light: "Channels, drop-offs, edges of the flats",
+  Peak: "Jetties, pontoons, snags, creek mouths",
+  Slowing: "Flats, shallow water, deep holes"
+};
+
+// Absolute minutes since a fixed epoch, so a time on one calendar day
+// compares correctly against a time on another -- needed because the tide
+// leg containing dawn can start the evening before (a low at 11:40pm
+// carrying into an early dawn), which findQldTideTurns' per-day filtering
+// would miss the "before midnight" half of.
+const SESSION_EPOCH_UTC = Date.UTC(2020, 0, 1);
+function absMinutesFromDateStr(dateStr, minutes) {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  const dayIdx = Math.round((Date.UTC(y, m - 1, d) - SESSION_EPOCH_UTC) / 86400000);
+  return dayIdx * 1440 + minutes;
+}
+
+// Same local-min/max turn detection as findQldTideTurns, but scanning the
+// WHOLE fetched tide range at once instead of one calendar day at a time.
+function findAllTideTurns(qldPoints) {
+  const pts = qldPoints
+    .map(p => ({ abs: absMinutesFromDateStr(p.dateStr, p.minutes), height: p.height }))
+    .sort((a, b) => a.abs - b.abs);
+  const turns = [];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i - 1].height, cur = pts[i].height, next = pts[i + 1].height;
+    if (cur > prev && cur >= next) turns.push({ type: "high", abs: pts[i].abs });
+    else if (cur < prev && cur <= next) turns.push({ type: "low", abs: pts[i].abs });
+  }
+  return turns;
+}
+
+// The two consecutive turns bracketing targetAbs -- the one tide leg that
+// moment actually falls inside. Null if targetAbs is outside the range of
+// detected turns entirely (not enough surrounding data to know the leg's
+// start or end -- e.g. a very early dawn whose leg started before the
+// marine API's data window begins).
+function findSessionLeg(allTurns, targetAbs) {
+  for (let i = 0; i < allTurns.length - 1; i++) {
+    if (allTurns[i].abs <= targetAbs && targetAbs < allTurns[i + 1].abs) {
+      return { start: allTurns[i], end: allTurns[i + 1] };
+    }
+  }
+  return null;
+}
+
+// Slack/Light/Peak/Slowing boundaries as fractions of the LEG'S OWN actual
+// duration (real tide legs vary, rarely exactly 6 hours) -- 1/6, 2/6, 4/6,
+// 6/6, matching the source guide's "1st hour / 2nd hour / 3rd-4th hours /
+// 5th-6th hours" split of a nominal 6-hour cycle.
+function buildTidePhases(startAbs, endAbs) {
+  const dur = endAbs - startAbs;
+  const bounds = [startAbs, startAbs + dur / 6, startAbs + dur / 3, startAbs + dur * 2 / 3, endAbs];
+  return ["Slack", "Light", "Peak", "Slowing"].map((name, i) => ({ name, startAbs: bounds[i], endAbs: bounds[i + 1] }));
+}
+
+// One session (Morning, built around dawn, or Evening, built around dusk)
+// for one day. Null if there isn't enough tide data to find the full leg
+// (both bracketing turns) -- shown as "not enough data" rather than guessed
+// at, same philosophy as tideNearSun/species timing elsewhere in this file.
+function buildSession(allTurns, dateStr, targetMin, label) {
+  if (targetMin == null || allTurns.length < 2) return null;
+  const targetAbs = absMinutesFromDateStr(dateStr, targetMin);
+  const leg = findSessionLeg(allTurns, targetAbs);
+  if (!leg) return null;
+  const phases = buildTidePhases(leg.start.abs, leg.end.abs);
+  let phaseIdx = phases.findIndex(p => targetAbs >= p.startAbs && targetAbs < p.endAbs);
+  if (phaseIdx === -1) phaseIdx = phases.length - 1;
+  return {
+    label,
+    rangeLabel: `${leg.start.type === "high" ? "High" : "Low"} ${minutesToClock(leg.start.abs)} → ${leg.end.type === "high" ? "High" : "Low"} ${minutesToClock(leg.end.abs)}`,
+    targetLabel: `${label === "Morning" ? "dawn" : "dusk"} ${minutesToClock(targetAbs)}`,
+    phaseIdx,
+    phases: phases.map(p => ({ name: p.name, timeLabel: `${minutesToClock(p.startAbs)}–${minutesToClock(p.endAbs)}`, areas: PHASE_AREAS[p.name] }))
+  };
+}
+
+// Top-level entry point, called once per day alongside speciesCommentary --
+// builds both the morning (dawn) and evening (dusk) session, either of which
+// can come back null if that day's data doesn't support it.
+function buildSessionPlan(weather, allTurns, dayOffset) {
+  const dateStr = weather?.daily?.time?.[dayOffset];
+  if (!dateStr) return null;
+  const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[dayOffset]);
+  const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[dayOffset]);
+  const morning = buildSession(allTurns, dateStr, sunRiseMin, "Morning");
+  const evening = buildSession(allTurns, dateStr, sunSetMin, "Evening");
+  if (!morning && !evening) return null;
+  return { morning, evening };
 }
 
 /* Tide scoring: up to 20 pts for timing near dawn/dusk (gradated, not all-or-nothing),
@@ -1705,7 +1886,7 @@ function buildScoringSentence(checks) {
 }
 
 function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayLabel) {
-  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, speciesCommentary, scoringSentence } = result;
+  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, speciesCommentary, scoringSentence, sessionPlan } = result;
   // Share data lives on the pill itself (data-share, JSON) rather than a
   // separate button -- see buildShareText/shareCard. NO-DATA days have
   // nothing worth sharing, so the pill stays inert for those.
@@ -1774,6 +1955,7 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
         <div class="commentary">Loading…</div>
         ${speciesHTML ? `<div class="sub-label">Species times</div><div class="commentary">${speciesHTML}</div>` : ""}
       </details>`;
+  const sessionPlanHTML = renderSessionPlanHTML(dateStr, sessionPlan);
   return `
       <div class="score-row">
         <div class="score">${status === "NO-DATA" ? "–" : score}<span class="max">${status === "NO-DATA" ? "" : "/100"}</span></div>
@@ -1783,7 +1965,52 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
       ${tideTimesHTML}
       ${safeUntilHTML}
       ${commentaryDetailsHTML}
-      ${biteDetailsHTML}`;
+      ${biteDetailsHTML}
+      ${sessionPlanHTML}`;
+}
+
+// Session Plan button + reveal panel (2026-09, Tod's call) -- a button
+// rather than another <details> dropdown, since "click and it flips to show
+// a plan" was the framing from the start; toggled in place (not a literal
+// 3D flip) to avoid fighting the horizontally snap-scrolling row. Morning
+// and Evening (when both exist for a day) render as two panels up front,
+// switched with plain tab buttons rather than re-rendering from JS state --
+// simpler and more robust than tracking which session is "selected" in
+// script. See the delegated click listener near the bottom of this file for
+// both the toggle and the tab-switch behaviour.
+function renderSessionPlanHTML(dateStr, sessionPlan) {
+  if (!sessionPlan || (!sessionPlan.morning && !sessionPlan.evening)) return "";
+  const sessions = [sessionPlan.morning, sessionPlan.evening].filter(Boolean);
+  const defaultKey = sessions[0].label.toLowerCase();
+
+  const renderPhases = (session) => session.phases.map((p, idx) => {
+    const isCurrent = idx === session.phaseIdx;
+    return `<div class="phase-row${isCurrent ? " current" : ""}">
+        <span class="phase-name">${p.name}</span> <span class="phase-time">${p.timeLabel}</span> — ${p.areas}${isCurrent ? ` <span class="phase-marker">📍 ${session.targetLabel}</span>` : ""}
+      </div>`;
+  }).join("");
+
+  const panelsHTML = sessions.map(s => {
+    const key = s.label.toLowerCase();
+    return `<div class="session-phases" data-session="${key}"${key !== defaultKey ? " hidden" : ""}>
+        <div class="session-range">${s.rangeLabel}</div>
+        ${renderPhases(s)}
+      </div>`;
+  }).join("");
+
+  const tabsHTML = sessions.length > 1
+    ? `<div class="session-tabs">${sessions.map(s => {
+        const key = s.label.toLowerCase();
+        return `<div class="session-tab${key === defaultKey ? " active" : ""}" data-tab="${key}">${s.label}</div>`;
+      }).join("")}</div>`
+    : "";
+
+  return `
+      <button type="button" class="session-plan-btn" data-plan-toggle="${dateStr}">🕐 Session Plan</button>
+      <div class="session-plan" id="sessionPlan-${dateStr}" hidden>
+        ${tabsHTML}
+        ${panelsHTML}
+      </div>`;
 }
 
 /* Week chip grid (2026-09, Tod's call) -- replaces the old "Top spots this
@@ -1842,6 +2069,11 @@ async function load() {
     }
 
     /* ========== TODAY + NEXT 7 DAYS, ONE UNIFIED SET ========== */
+    // Computed once here rather than per-day below (2026-09) -- Session Plan
+    // needs to find the tide leg containing dawn/dusk, which can span a
+    // midnight boundary, so it scans across ALL 8 fetched days of tide
+    // points at once rather than one calendar day at a time.
+    const allTideTurns = findAllTideTurns(qldPoints);
     const dayResults = [];
     for (let i = 0; i <= 7; i++) {
       const date = weather.daily.time[i];
@@ -1849,6 +2081,7 @@ async function load() {
       const waveCheck = r.checks.find(c => c.icon === "🌊");
       r.speciesCommentary = buildSpeciesCommentary(weather, qldPoints, i, key, waveCheck);
       r.scoringSentence = renderChecklist(r.checks);
+      r.sessionPlan = buildSessionPlan(weather, allTideTurns, i);
       dayResults.push({ i, date, r });
     }
 
@@ -2006,6 +2239,23 @@ document.getElementById("cardsGrid").addEventListener("click", (e) => {
   if (chip) {
     const target = document.getElementById(`dayCard-${chip.dataset.jump}`);
     if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    return;
+  }
+  // Session Plan (2026-09, Tod's call) -- button toggles the reveal panel;
+  // tabs (when a day has both Morning and Evening) just show/hide the
+  // matching pre-rendered .session-phases block, no re-render needed.
+  const planBtn = e.target.closest(".session-plan-btn[data-plan-toggle]");
+  if (planBtn) {
+    const panel = document.getElementById(`sessionPlan-${planBtn.dataset.planToggle}`);
+    if (panel) panel.hidden = !panel.hidden;
+    return;
+  }
+  const tab = e.target.closest(".session-tab[data-tab]");
+  if (tab) {
+    const panel = tab.closest(".session-plan");
+    if (!panel) return;
+    panel.querySelectorAll(".session-tab").forEach(t => t.classList.toggle("active", t === tab));
+    panel.querySelectorAll(".session-phases").forEach(sp => { sp.hidden = sp.dataset.session !== tab.dataset.tab; });
   }
 });
 
