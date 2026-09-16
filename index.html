@@ -374,24 +374,59 @@
   <h1>FishGoNoGo</h1>
 
   <div id="dashboardView">
+  <!-- Grouped by distance from Pelican Park, Clontarf (2026-09, Tod's call)
+       -- replaces the old flat 7-option list once it grew to 18 named spots.
+       optgroup keeps this a single native <select> (no new UI pattern, still
+       just one control) while making a long list scannable. Group order and
+       membership: "Home bay" is the <10nm mainland cluster; "Bay islands &
+       passages" and "Moreton Island" are the ~7-19nm bay islands/passages/
+       Moreton Island landing spots; "Reefs" is the four local-range
+       artificial reefs -- five further-out reefs (West Peel, North
+       Stradbroke Island, East Coochie, Wild Banks, South Stradbroke,
+       20-34nm) were considered and dropped (Tod's call, 2026-09) as a
+       different trip category, same reasoning as the Noosa/Tweed/Ballina
+       candidates earlier. "Beacons" (2026-09, Tod's call: "add the beacons
+       in as they are used for fishing too") holds three navigation-marker
+       structures Tod fishes -- kept as their own group rather than folded
+       into Reefs since a beacon and a deployed artificial reef are
+       different kinds of structure, even though both hold fish. All three
+       fall in the same 8-20nm local range as Reefs, not the dropped
+       further-out band. -->
   <select id="locationSelect">
-    <option value="pine" selected>Pine River</option>
-    <option value="woody">Woody Point</option>
-    <option value="moreton">Moreton Island</option>
-    <option value="pumicestone">Pumicestone Passage</option>
-    <option value="scarborough">Scarborough Reef</option>
-    <option value="mud">Mud Island</option>
-    <option value="caboolture">Caboolture River</option>
+    <optgroup label="Home bay">
+      <option value="woody">Woody Point</option>
+      <option value="margate">Margate</option>
+      <option value="pine" selected>Pine River</option>
+      <option value="scarborough">Scarborough Reef</option>
+      <option value="caboolture">Caboolture River</option>
+      <option value="brisbane">Brisbane River</option>
+    </optgroup>
+    <optgroup label="Bay islands & passages">
+      <option value="mud">Mud Island</option>
+      <option value="sthelena">St Helena Island</option>
+      <option value="pumicestone">Pumicestone Passage</option>
+      <option value="bribie">Bribie Island (Bongaree)</option>
+    </optgroup>
+    <optgroup label="Moreton Island">
+      <option value="lucinda">Lucinda Bay</option>
+      <option value="tangalooma">Tangalooma</option>
+      <option value="bulwer">Bulwer</option>
+      <option value="kooringal">Kooringal</option>
+    </optgroup>
+    <optgroup label="Reefs">
+      <option value="turner">Turner Artificial Reef</option>
+      <option value="harryatkinson">Harry Atkinson Artificial Reef</option>
+      <option value="northmoreton">North Moreton Artificial Reef</option>
+      <option value="curtin">Curtin Artificial Reef</option>
+    </optgroup>
+    <optgroup label="Beacons">
+      <option value="coffeepots">The Coffee Pots</option>
+      <option value="fourbeacons">The Four Beacons</option>
+      <option value="comboyuro">Comboyuro Beacons</option>
+    </optgroup>
   </select>
   <div class="gauge-note" id="gaugeNote"></div>
 
-  <div class="search-row">
-    <input type="text" id="locationSearchInput" placeholder="Search a place">
-    <button id="locationSearchBtn" type="button" aria-label="Search">→</button>
-  </div>
-  <div class="gauge-note" id="searchStatus"></div>
-
-  <h2 class="section-title">This Week</h2>
   <div class="swipe-hint">Swipe sideways to see more days →</div>
   <div class="forecast-row" id="cardsGrid">
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
@@ -811,6 +846,26 @@
       </label>
       <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
     </details>
+
+    <!-- Search a place (2026-09, Tod's call) -- moved from a permanently
+         visible row directly under the main location <select> into its own
+         collapsed dropdown at the bottom of this panel, since it's used far
+         less often than picking one of the 18 named presets above and was
+         "taking up space" sitting open by default. Same #locationSearchInput/
+         #locationSearchBtn/#searchStatus ids as before, so none of the
+         existing JS (searchLocation(), the keydown listener, the
+         localStorage restore) needed to change -- only where these elements
+         live in the page moved. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Search a place</summary>
+      <div class="commentary">
+        <div class="search-row" style="margin-top:8px;">
+          <input type="text" id="locationSearchInput" placeholder="Search a place">
+          <button id="locationSearchBtn" type="button" aria-label="Search">→</button>
+        </div>
+        <div class="gauge-note" id="searchStatus"></div>
+      </div>
+    </details>
   </div>
   </div>
 
@@ -851,14 +906,52 @@
 </div>
 
 <script>
+/* Expanded 2026-09 (Tod's call) from the original 7 to 18 named presets,
+   grouped by distance from Pelican Park, Clontarf -- see the <optgroup>
+   labels on #locationSelect above, which mirror the grouping here.
+   distantGauge (narrow-passage tide caveat, see gaugeNote in load()) is
+   set on both Pumicestone Passage and Bribie Island (Bongaree) since
+   they're the same narrow-passage water body -- earlier code comments in
+   this app already grouped "Pumicestone Passage / Bribie Island area" as
+   one less-reliable-tide zone before Bribie was ever its own preset.
+   Brisbane River uses the river mouth (Port of Brisbane), not a point
+   upstream, since the river itself has no single location (Tod's call:
+   "use the mouth or port"). Lucinda Bay's coordinates (27 13.261'S,
+   153 22.081'E) came directly from Tod, converted from degrees-minutes.
+   The generic "Moreton Island" preset was retired in favour of the four
+   specific landing spots below (Lucinda Bay/Tangalooma/Bulwer/Kooringal)
+   -- "Kooringal" is the correct spelling (Tod's "Koorigal" was a typo).
+   The four Reefs entries are the local-range (~3-18nm) artificial reefs;
+   five further-out ones (20-34nm) were considered and dropped (Tod's
+   call) as a different trip category. */
 const LOCATIONS = {
-  pine:        { lat: -27.273, lon: 153.040, name: "Pine River" },
-  woody:       { lat: -27.255, lon: 153.102, name: "Woody Point" },
-  moreton:     { lat: -27.083, lon: 153.383, name: "Moreton Island" },
-  pumicestone: { lat: -27.015, lon: 153.100, name: "Pumicestone Passage", distantGauge: true },
-  scarborough: { lat: -27.210, lon: 153.120, name: "Scarborough Reef" },
-  mud:         { lat: -27.320, lon: 153.215, name: "Mud Island" },
-  caboolture:  { lat: -27.128, lon: 153.063, name: "Caboolture River" }
+  // Home bay
+  woody:         { lat: -27.255,  lon: 153.102,  name: "Woody Point" },
+  margate:       { lat: -27.2430, lon: 153.1025, name: "Margate" },
+  pine:          { lat: -27.273,  lon: 153.040,  name: "Pine River" },
+  scarborough:   { lat: -27.210,  lon: 153.120,  name: "Scarborough Reef" },
+  caboolture:    { lat: -27.128,  lon: 153.063,  name: "Caboolture River" },
+  brisbane:      { lat: -27.3802, lon: 153.1802, name: "Brisbane River" },
+  // Bay islands & passages
+  mud:           { lat: -27.320,  lon: 153.215,  name: "Mud Island" },
+  sthelena:      { lat: -27.3917, lon: 153.2328, name: "St Helena Island" },
+  pumicestone:   { lat: -27.015,  lon: 153.100,  name: "Pumicestone Passage", distantGauge: true },
+  bribie:        { lat: -27.0813, lon: 153.1636, name: "Bribie Island (Bongaree)", distantGauge: true },
+  // Moreton Island
+  lucinda:       { lat: -27.2210, lon: 153.3680, name: "Lucinda Bay, Moreton Island" },
+  tangalooma:    { lat: -27.1630, lon: 153.3684, name: "Tangalooma, Moreton Island" },
+  bulwer:        { lat: -27.0786, lon: 153.3697, name: "Bulwer, Moreton Island" },
+  kooringal:     { lat: -27.350,  lon: 153.4205, name: "Kooringal, Moreton Island" },
+  // Reefs (local range)
+  turner:        { lat: -27.2333, lon: 153.1417, name: "Turner Artificial Reef" },
+  harryatkinson: { lat: -27.4083, lon: 153.2833, name: "Harry Atkinson Artificial Reef" },
+  northmoreton:  { lat: -27.0333, lon: 153.2833, name: "North Moreton Artificial Reef" },
+  curtin:        { lat: -27.1083, lon: 153.3700, name: "Curtin Artificial Reef" },
+  // Beacons -- navigation-marker structures Tod fishes, kept separate from
+  // Reefs (see comment above locationSelect). Ordered by distance ascending.
+  coffeepots:    { lat: -27.3033, lon: 153.2417, name: "The Coffee Pots" },
+  fourbeacons:   { lat: -27.1083, lon: 153.3333, name: "The Four Beacons" },
+  comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons" }
 };
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
@@ -2055,9 +2148,10 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
    below). This only needs the SAME location's own 8 days, already computed
    synchronously in load() as dayResults, so the grid renders immediately
    with the rest of the row -- no async fetch, no loading state, one fewer
-   network round trip per preset location on every load(). No card heading:
-   this sits directly under the page's own "This Week" <h2>, so repeating
-   that text here would just be noise. Each chip carries data-jump so the
+   network round trip per preset location on every load(). No card heading
+   -- the page's own "This Week" <h2> was removed entirely (2026-09, Tod's
+   call: it was "taking up space"), so there's nothing left to repeat here
+   either. Each chip carries data-jump so the
    delegated click listener below can scroll the row to that day's own card. */
 function renderWeekChipGridHTML(dayResults) {
   const chips = dayResults.map(({ i, date, r }) => {
