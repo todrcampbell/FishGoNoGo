@@ -34,6 +34,11 @@
   }
   select:active { background: #26313f; }
   select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
+  /* Smaller text just for the location list (2026-09, Tod's call) -- it's
+     grown to 21 options across 6 groups, so a smaller font fits more of
+     each label without wrapping. Scoped to this one select rather than the
+     shared `select` rule above, so Plan a Crossing's day picker is unaffected. */
+  #locationSelect { font-size: 14px; }
   .gauge-note { font-size: 0.78rem; color: #9ca3af; margin: 0 0 16px 0; max-width: 420px; }
   .app-footer { font-size: 0.72rem; color: #6b7280; margin-top: 28px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.5; }
   .pref-toggle {
@@ -374,50 +379,58 @@
   <h1>FishGoNoGo</h1>
 
   <div id="dashboardView">
-  <!-- Grouped by distance from Pelican Park, Clontarf (2026-09, Tod's call)
-       -- replaces the old flat 7-option list once it grew to 18 named spots.
-       optgroup keeps this a single native <select> (no new UI pattern, still
-       just one control) while making a long list scannable. Group order and
-       membership: "Home bay" is the <10nm mainland cluster; "Bay islands &
-       passages" and "Moreton Island" are the ~7-19nm bay islands/passages/
-       Moreton Island landing spots; "Reefs" is the four local-range
-       artificial reefs -- five further-out reefs (West Peel, North
-       Stradbroke Island, East Coochie, Wild Banks, South Stradbroke,
-       20-34nm) were considered and dropped (Tod's call, 2026-09) as a
-       different trip category, same reasoning as the Noosa/Tweed/Ballina
-       candidates earlier. "Beacons" (2026-09, Tod's call: "add the beacons
-       in as they are used for fishing too") holds three navigation-marker
-       structures Tod fishes -- kept as their own group rather than folded
-       into Reefs since a beacon and a deployed artificial reef are
-       different kinds of structure, even though both hold fish. All three
-       fall in the same 8-20nm local range as Reefs, not the dropped
-       further-out band. -->
+  <!-- Regrouped (2026-09, Tod's call) from the old distance-banded layout
+       into a place-based layout he sketched by hand: "Peninsula" (Redcliffe
+       Peninsula shore spots), "Brisbane" (river-mouth/port + the two bay
+       islands off Wellington Point -- Mud Island and St Helena Island are
+       geographically part of that Wellington Point chain, not Moreton
+       Island, confirmed against Wikipedia when Tod's earlier draft had them
+       under Moreton Island), "Bribie Island" (every spot in and around the
+       island, including Caboolture River -- its mouth is near Beachmere/
+       Deception Bay, right next to this cluster, not near Brisbane -- and
+       Pumicestone Passage, kept in this group rather than dropped: it's the
+       channel *between* Bribie and the mainland, a functionally different
+       kind of spot from the four shore points here, and the only one
+       carrying the distantGauge tide-accuracy caveat), "Moreton Island",
+       "Reefs" (labels trimmed 2026-09, Tod's call, to just the name --
+       Turners/Harry Atkinsons/North Moreton/Curtin -- rather than repeating
+       "Artificial Reef" on every option), and "Beacons". Fisherman's Island
+       replaces the old standalone Brisbane River preset (Tod's call) --
+       same river-mouth trip, more specific spot. optgroup stays flat (one
+       level) rather than nesting Bribie Island inside Brisbane as Tod's
+       first sketch showed, since native <select><optgroup> doesn't support
+       a group inside a group -- confirmed with him, this flat version is
+       what he wants. -->
   <select id="locationSelect">
-    <optgroup label="Home bay">
+    <optgroup label="Peninsula">
+      <option value="pine" selected>Pine River</option>
       <option value="woody">Woody Point</option>
       <option value="margate">Margate</option>
-      <option value="pine" selected>Pine River</option>
       <option value="scarborough">Scarborough Reef</option>
-      <option value="caboolture">Caboolture River</option>
-      <option value="brisbane">Brisbane River</option>
     </optgroup>
-    <optgroup label="Bay islands & passages">
+    <optgroup label="Brisbane">
+      <option value="fishermans">Fisherman's Island</option>
       <option value="mud">Mud Island</option>
       <option value="sthelena">St Helena Island</option>
+    </optgroup>
+    <optgroup label="Bribie Island">
+      <option value="bongaree">Bongaree</option>
+      <option value="woodybay">Woody Bay</option>
+      <option value="woorim">Woorim</option>
+      <option value="caboolture">Caboolture River</option>
       <option value="pumicestone">Pumicestone Passage</option>
-      <option value="bribie">Bribie Island (Bongaree)</option>
     </optgroup>
     <optgroup label="Moreton Island">
-      <option value="lucinda">Lucinda Bay</option>
-      <option value="tangalooma">Tangalooma</option>
       <option value="bulwer">Bulwer</option>
+      <option value="tangalooma">Tangalooma</option>
+      <option value="lucinda">Lucinda Bay</option>
       <option value="kooringal">Kooringal</option>
     </optgroup>
     <optgroup label="Reefs">
-      <option value="turner">Turner Artificial Reef</option>
-      <option value="harryatkinson">Harry Atkinson Artificial Reef</option>
-      <option value="northmoreton">North Moreton Artificial Reef</option>
-      <option value="curtin">Curtin Artificial Reef</option>
+      <option value="turner">Turners</option>
+      <option value="harryatkinson">Harry Atkinsons</option>
+      <option value="northmoreton">North Moreton</option>
+      <option value="curtin">Curtin</option>
     </optgroup>
     <optgroup label="Beacons">
       <option value="coffeepots">The Coffee Pots</option>
@@ -914,49 +927,53 @@
 </div>
 
 <script>
-/* Expanded 2026-09 (Tod's call) from the original 7 to 18 named presets,
-   grouped by distance from Pelican Park, Clontarf -- see the <optgroup>
-   labels on #locationSelect above, which mirror the grouping here.
-   distantGauge (narrow-passage tide caveat, see gaugeNote in load()) is
-   set on both Pumicestone Passage and Bribie Island (Bongaree) since
-   they're the same narrow-passage water body -- earlier code comments in
-   this app already grouped "Pumicestone Passage / Bribie Island area" as
-   one less-reliable-tide zone before Bribie was ever its own preset.
-   Brisbane River uses the river mouth (Port of Brisbane), not a point
-   upstream, since the river itself has no single location (Tod's call:
-   "use the mouth or port"). Lucinda Bay's coordinates (27 13.261'S,
-   153 22.081'E) came directly from Tod, converted from degrees-minutes.
-   The generic "Moreton Island" preset was retired in favour of the four
-   specific landing spots below (Lucinda Bay/Tangalooma/Bulwer/Kooringal)
-   -- "Kooringal" is the correct spelling (Tod's "Koorigal" was a typo).
-   The four Reefs entries are the local-range (~3-18nm) artificial reefs;
-   five further-out ones (20-34nm) were considered and dropped (Tod's
-   call) as a different trip category. */
+/* Regrouped 2026-09 (Tod's call) from the old distance-banded list into the
+   place-based groups on #locationSelect above -- see the long comment
+   there for the full reasoning (Mud/St Helena under Brisbane not Moreton
+   Island, Caboolture River and Pumicestone Passage under Bribie Island,
+   Fisherman's Island replacing the old Brisbane River preset, trimmed Reef
+   labels). distantGauge (narrow-passage tide caveat, see gaugeNote in
+   load()) stays on Bongaree and Pumicestone Passage -- same narrow-passage
+   water body as before, just renamed/regrouped. Woody Bay and Woorim don't
+   get it: Woorim faces the open Coral Sea coast (Wikipedia: "bounded by
+   the Coral Sea to the east"), and Woody Bay's exact water body wasn't
+   confirmed either way, so it's left off rather than assumed. Coordinates:
+   Woorim (27 04.19'S, 153 12.20'E) from Wikipedia; Woody Bay (-27.090059,
+   153.205217) and Fisherman's Island (-27.4500, 153.0666, Port of
+   Brisbane/river mouth) both Tod-confirmed/sourced 2026-09. Lucinda Bay's
+   coordinates (27 13.261'S, 153 22.081'E) came directly from Tod earlier,
+   converted from degrees-minutes. "Kooringal" is the correct spelling
+   (Tod's earlier "Koorigal" was a typo). The four Reefs entries are the
+   local-range (~3-18nm) artificial reefs; five further-out ones (20-34nm)
+   were considered and dropped (Tod's call) as a different trip category. */
 const LOCATIONS = {
-  // Home bay
+  // Peninsula
+  pine:          { lat: -27.273,  lon: 153.040,  name: "Pine River" },
   woody:         { lat: -27.255,  lon: 153.102,  name: "Woody Point" },
   margate:       { lat: -27.2430, lon: 153.1025, name: "Margate" },
-  pine:          { lat: -27.273,  lon: 153.040,  name: "Pine River" },
   scarborough:   { lat: -27.210,  lon: 153.120,  name: "Scarborough Reef" },
-  caboolture:    { lat: -27.128,  lon: 153.063,  name: "Caboolture River" },
-  brisbane:      { lat: -27.3802, lon: 153.1802, name: "Brisbane River" },
-  // Bay islands & passages
+  // Brisbane
+  fishermans:    { lat: -27.4500, lon: 153.0666, name: "Fisherman's Island" },
   mud:           { lat: -27.320,  lon: 153.215,  name: "Mud Island" },
   sthelena:      { lat: -27.3917, lon: 153.2328, name: "St Helena Island" },
+  // Bribie Island
+  bongaree:      { lat: -27.0813, lon: 153.1636, name: "Bongaree", distantGauge: true },
+  woodybay:      { lat: -27.090059, lon: 153.205217, name: "Woody Bay" },
+  woorim:        { lat: -27.0699, lon: 153.2034, name: "Woorim" },
+  caboolture:    { lat: -27.128,  lon: 153.063,  name: "Caboolture River" },
   pumicestone:   { lat: -27.015,  lon: 153.100,  name: "Pumicestone Passage", distantGauge: true },
-  bribie:        { lat: -27.0813, lon: 153.1636, name: "Bribie Island (Bongaree)", distantGauge: true },
   // Moreton Island
-  lucinda:       { lat: -27.2210, lon: 153.3680, name: "Lucinda Bay, Moreton Island" },
-  tangalooma:    { lat: -27.1630, lon: 153.3684, name: "Tangalooma, Moreton Island" },
-  bulwer:        { lat: -27.0786, lon: 153.3697, name: "Bulwer, Moreton Island" },
-  kooringal:     { lat: -27.350,  lon: 153.4205, name: "Kooringal, Moreton Island" },
+  bulwer:        { lat: -27.0786, lon: 153.3697, name: "Bulwer" },
+  tangalooma:    { lat: -27.1630, lon: 153.3684, name: "Tangalooma" },
+  lucinda:       { lat: -27.2210, lon: 153.3680, name: "Lucinda Bay" },
+  kooringal:     { lat: -27.350,  lon: 153.4205, name: "Kooringal" },
   // Reefs (local range)
-  turner:        { lat: -27.2333, lon: 153.1417, name: "Turner Artificial Reef" },
-  harryatkinson: { lat: -27.4083, lon: 153.2833, name: "Harry Atkinson Artificial Reef" },
-  northmoreton:  { lat: -27.0333, lon: 153.2833, name: "North Moreton Artificial Reef" },
-  curtin:        { lat: -27.1083, lon: 153.3700, name: "Curtin Artificial Reef" },
+  turner:        { lat: -27.2333, lon: 153.1417, name: "Turners" },
+  harryatkinson: { lat: -27.4083, lon: 153.2833, name: "Harry Atkinsons" },
+  northmoreton:  { lat: -27.0333, lon: 153.2833, name: "North Moreton" },
+  curtin:        { lat: -27.1083, lon: 153.3700, name: "Curtin" },
   // Beacons -- navigation-marker structures Tod fishes, kept separate from
-  // Reefs (see comment above locationSelect). Ordered by distance ascending.
+  // Reefs. Ordered by distance ascending.
   coffeepots:    { lat: -27.3033, lon: 153.2417, name: "The Coffee Pots" },
   fourbeacons:   { lat: -27.1083, lon: 153.3333, name: "The Four Beacons" },
   comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons" }
