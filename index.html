@@ -845,6 +845,14 @@
         I'm not on the open bay
       </label>
       <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
+      <!-- Fishing spots map (2026-09, Tod's call: "how can we use that in
+           the app" re: his Google My Maps of the 21 app locations) --
+           simplest option he picked was a plain link out to the map he
+           already made, rather than embedding it or deep-linking per
+           location. Plain <a> (not a button) since it's a real external
+           link with its own href, opened in a new tab so the app itself
+           stays open underneath. -->
+      <a id="fishingSpotsMapLink" class="link-button" href="https://www.google.com/maps/d/u/0/edit?mid=12hwQ5F8wFx_wqBUm34LYcr8SrZfiKlg&amp;usp=sharing" target="_blank" rel="noopener" style="margin-top:10px;">View Fishing Spots Map →</a>
     </details>
 
     <!-- Search a place (2026-09, Tod's call) -- moved from a permanently
