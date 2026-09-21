@@ -62,6 +62,32 @@
     cursor: pointer; width: 100%; max-width: 420px; margin-top: 14px;
   }
   .action-btn:active { background: #26313f; }
+  /* Plan a Crossing's two action buttons (2026-09, Tod's call: Generate
+     Trip Prompt added alongside the existing Check Crossing) -- side by
+     side where there's room, stacked full-width on a narrow screen, same
+     as every other wrap-to-column layout in this file. */
+  .action-row { display: flex; gap: 10px; max-width: 420px; flex-wrap: wrap; margin-top: 14px; }
+  .action-row .action-btn { flex: 1; min-width: 160px; margin-top: 0; }
+  /* En route list (2026-09, Tod's call) -- see findEnRouteStops(). Same
+     card/border language as the rest of the app (#1f2937 fill, #374151
+     border) rather than a new visual pattern. */
+  .enroute-list { display: flex; flex-direction: column; gap: 8px; max-width: 420px; margin-top: 8px; }
+  .enroute-item {
+    background: #1f2937; border: 1px solid #374151; border-radius: 10px;
+    padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .enroute-dot { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; margin-top: 6px; flex-shrink: 0; }
+  .enroute-name { font-weight: 700; font-size: 14px; }
+  .enroute-note { font-size: 12.5px; color: #9ca3af; margin-top: 2px; line-height: 1.4; }
+  .enroute-dist { font-size: 11px; color: #6b7280; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  /* Generated trip prompt (2026-09, Tod's call) -- monospace so the pasted
+     text keeps its line breaks recognisably when read here before copying. */
+  .prompt-box {
+    background: #111827; border: 1px solid #374151; border-radius: 10px;
+    padding: 14px; font-size: 13px; line-height: 1.6; color: #e5e7eb;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap; max-width: 420px; margin: 0;
+  }
   .search-row { display: flex; gap: 8px; max-width: 420px; margin-bottom: 6px; }
   #locationSearchInput {
     /* min-width:0 overrides the flex item default of min-width:auto, which
@@ -846,7 +872,12 @@
     <!-- Preferences holds live toggle state (unlike the reference-only
          dropdowns above), so its summary line reflects which preferences are
          actually on right now (see updatePreferencesSummary()) rather than
-         staying a plain, uninformative label while collapsed. -->
+         staying a plain, uninformative label while collapsed. Plan a
+         Crossing and the Fishing Spots Map link used to live here too, but
+         moved out 2026-09 (Tod's call) into the new Locations dropdown
+         below -- they were never really "preferences," just squatting here
+         since Preferences was the nearest collapsed dropdown available at
+         the time. -->
     <details class="species-toggle" style="margin-top:22px;">
       <summary id="preferencesSummary">Preferences</summary>
       <label class="pref-toggle">
@@ -857,28 +888,25 @@
         <input type="checkbox" id="wavePrefToggle">
         I'm not on the open bay
       </label>
-      <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
-      <!-- Fishing spots map (2026-09, Tod's call: "how can we use that in
-           the app" re: his Google My Maps of the 21 app locations) --
-           simplest option he picked was a plain link out to the map he
-           already made, rather than embedding it or deep-linking per
-           location. Plain <a> (not a button) since it's a real external
-           link with its own href, opened in a new tab so the app itself
-           stays open underneath. -->
-      <a id="fishingSpotsMapLink" class="link-button" href="https://www.google.com/maps/d/u/0/edit?mid=12hwQ5F8wFx_wqBUm34LYcr8SrZfiKlg&amp;usp=sharing" target="_blank" rel="noopener" style="margin-top:10px;">View Fishing Spots Map →</a>
     </details>
 
-    <!-- Search a place (2026-09, Tod's call) -- moved from a permanently
-         visible row directly under the main location <select> into its own
-         collapsed dropdown at the bottom of this panel, since it's used far
-         less often than picking one of the 18 named presets above and was
-         "taking up space" sitting open by default. Same #locationSearchInput/
-         #locationSearchBtn/#searchStatus ids as before, so none of the
-         existing JS (searchLocation(), the keydown listener, the
-         localStorage restore) needed to change -- only where these elements
-         live in the page moved. -->
+    <!-- Locations (2026-09, Tod's call) -- consolidates every location-
+         related tool into the one dropdown that used to just be "Search a
+         place": the search box, Plan a Crossing (moved out of Preferences,
+         where it never really belonged), and the Fishing Spots Map link
+         (moved out of Preferences too). Tod's reasoning, and the reason
+         this isn't added complexity: this replaces the "Search a place"
+         slot rather than sitting alongside it, so the page ends up with one
+         fewer dropdown to scan, not one more, and Preferences goes back to
+         being just the two toggles its name actually promises. Same
+         #locationSearchInput/#locationSearchBtn/#searchStatus/
+         #planCrossingLink/#fishingSpotsMapLink ids as before, so none of
+         the existing JS (searchLocation(), the keydown listener, the
+         localStorage restore, the planCrossingLink/fishingSpotsMapLink
+         listeners) needed to change -- only where these elements live in
+         the page moved, same pattern as the original Search a place move. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Search a place</summary>
+      <summary>Locations</summary>
       <div class="commentary">
         <div class="search-row" style="margin-top:8px;">
           <input type="text" id="locationSearchInput" placeholder="Search a place">
@@ -886,6 +914,8 @@
         </div>
         <div class="gauge-note" id="searchStatus"></div>
       </div>
+      <button id="planCrossingLink" type="button" class="link-button" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">Plan a Crossing →</button>
+      <a id="fishingSpotsMapLink" class="link-button" href="https://www.google.com/maps/d/u/0/edit?mid=12hwQ5F8wFx_wqBUm34LYcr8SrZfiKlg&amp;usp=sharing" target="_blank" rel="noopener" style="margin-top:10px;">View Fishing Spots Map →</a>
     </details>
   </div>
   </div>
@@ -899,28 +929,39 @@
     <select id="crossDaySelect"></select>
 
     <label class="field-label">Leave from</label>
-    <div class="search-row">
-      <input type="text" id="crossFromInput" placeholder="Search a place" value="Pelican Park, Clontarf">
+    <select id="crossFromSelect"></select>
+    <div class="search-row" style="margin-top:6px;">
+      <input type="text" id="crossFromInput" placeholder="Search a place">
       <button id="crossFromSearchBtn" type="button">Search</button>
     </div>
-    <div class="gauge-note" id="crossFromStatus">✓ Pelican Park, Clontarf</div>
+    <div class="gauge-note" id="crossFromStatus"></div>
 
     <label class="field-label">Departure time</label>
     <input type="time" id="crossDepartTime" value="07:00">
 
     <label class="field-label">Destination</label>
-    <div class="search-row">
-      <input type="text" id="crossToInput" placeholder="Search a place" value="Tangalooma Wrecks, Moreton Island">
+    <select id="crossToSelect"></select>
+    <div class="search-row" style="margin-top:6px;">
+      <input type="text" id="crossToInput" placeholder="Search a place">
       <button id="crossToSearchBtn" type="button">Search</button>
     </div>
-    <div class="gauge-note" id="crossToStatus">✓ Tangalooma Wrecks, Moreton Island</div>
+    <div class="gauge-note" id="crossToStatus"></div>
 
     <label class="field-label">Return time</label>
     <input type="time" id="crossReturnTime" value="15:00">
 
-    <button id="planCrossingBtn" type="button" class="action-btn">Check Crossing</button>
+    <!-- En route (2026-09, Tod's call) -- pure geometry, no network call, so
+         it updates instantly on every select change/search rather than
+         waiting on either action button below. See findEnRouteStops(). -->
+    <div id="crossingEnRoute"></div>
+
+    <div class="action-row">
+      <button id="planCrossingBtn" type="button" class="action-btn">Check Crossing</button>
+      <button id="generateTripPromptBtn" type="button" class="action-btn">Generate Trip Prompt</button>
+    </div>
 
     <div id="crossingResult" style="margin-top:16px;"></div>
+    <div id="tripPromptResult" style="margin-top:16px;"></div>
   </div>
 
   <div class="app-footer">© 2026 Tod Campbell. All rights reserved — design and scoring logic are original work.</div>
@@ -948,36 +989,47 @@
    were considered and dropped (Tod's call) as a different trip category. */
 const LOCATIONS = {
   // Peninsula
-  pine:          { lat: -27.273,  lon: 153.040,  name: "Pine River" },
-  woody:         { lat: -27.255,  lon: 153.102,  name: "Woody Point" },
-  margate:       { lat: -27.2430, lon: 153.1025, name: "Margate" },
-  scarborough:   { lat: -27.210,  lon: 153.120,  name: "Scarborough Reef" },
+  pine:          { lat: -27.273,  lon: 153.040,  name: "Pine River", group: "Peninsula", note: "River mouth spot on the Redcliffe Peninsula shoreline." },
+  woody:         { lat: -27.255,  lon: 153.102,  name: "Woody Point", group: "Peninsula", note: "Redcliffe Peninsula shoreline spot." },
+  margate:       { lat: -27.2430, lon: 153.1025, name: "Margate", group: "Peninsula", note: "Redcliffe Peninsula shoreline spot." },
+  scarborough:   { lat: -27.210,  lon: 153.120,  name: "Scarborough Reef", group: "Peninsula", note: "Reef structure close to the peninsula shore." },
   // Brisbane
-  fishermans:    { lat: -27.4500, lon: 153.0666, name: "Fisherman's Island" },
-  mud:           { lat: -27.320,  lon: 153.215,  name: "Mud Island" },
-  sthelena:      { lat: -27.3917, lon: 153.2328, name: "St Helena Island" },
+  fishermans:    { lat: -27.4500, lon: 153.0666, name: "Fisherman's Island", group: "Brisbane", note: "Port of Brisbane precinct, river-mouth structure." },
+  mud:           { lat: -27.320,  lon: 153.215,  name: "Mud Island", group: "Brisbane", note: "Bay island near Wellington Point." },
+  sthelena:      { lat: -27.3917, lon: 153.2328, name: "St Helena Island", group: "Brisbane", note: "Bay island near Wellington Point." },
   // Bribie Island
-  bongaree:      { lat: -27.0813, lon: 153.1636, name: "Bongaree", distantGauge: true },
-  woodybay:      { lat: -27.090059, lon: 153.205217, name: "Woody Bay" },
-  woorim:        { lat: -27.0699, lon: 153.2034, name: "Woorim" },
-  caboolture:    { lat: -27.128,  lon: 153.063,  name: "Caboolture River" },
-  pumicestone:   { lat: -27.015,  lon: 153.100,  name: "Pumicestone Passage", distantGauge: true },
+  bongaree:      { lat: -27.0813, lon: 153.1636, name: "Bongaree", distantGauge: true, group: "Bribie Island", note: "Bribie Island township, narrow-passage water." },
+  woodybay:      { lat: -27.090059, lon: 153.205217, name: "Woody Bay", group: "Bribie Island", note: "Bribie Island bay-side spot." },
+  woorim:        { lat: -27.0699, lon: 153.2034, name: "Woorim", group: "Bribie Island", note: "Bribie Island ocean-side surf beach." },
+  caboolture:    { lat: -27.128,  lon: 153.063,  name: "Caboolture River", group: "Bribie Island", note: "River mouth near Beachmere/Deception Bay." },
+  pumicestone:   { lat: -27.015,  lon: 153.100,  name: "Pumicestone Passage", distantGauge: true, group: "Bribie Island", note: "Narrow passage between Bribie Island and the mainland." },
   // Moreton Island
-  bulwer:        { lat: -27.0786, lon: 153.3697, name: "Bulwer" },
-  tangalooma:    { lat: -27.1630, lon: 153.3684, name: "Tangalooma" },
-  lucinda:       { lat: -27.2210, lon: 153.3680, name: "Lucinda Bay" },
-  kooringal:     { lat: -27.350,  lon: 153.4205, name: "Kooringal" },
+  bulwer:        { lat: -27.0786, lon: 153.3697, name: "Bulwer", group: "Moreton Island", note: "Moreton Island shoreline spot." },
+  tangalooma:    { lat: -27.1630, lon: 153.3684, name: "Tangalooma", group: "Moreton Island", note: "Moreton Island shoreline spot, near the wrecks." },
+  lucinda:       { lat: -27.2210, lon: 153.3680, name: "Lucinda Bay", group: "Moreton Island", note: "Moreton Island bay-side anchorage." },
+  kooringal:     { lat: -27.350,  lon: 153.4205, name: "Kooringal", group: "Moreton Island", note: "Moreton Island shoreline spot, southern end." },
   // Reefs (local range)
-  turner:        { lat: -27.2333, lon: 153.1417, name: "Turners" },
-  harryatkinson: { lat: -27.4083, lon: 153.2833, name: "Harry Atkinsons" },
-  northmoreton:  { lat: -27.0333, lon: 153.2833, name: "North Moreton" },
-  curtin:        { lat: -27.1083, lon: 153.3700, name: "Curtin" },
+  turner:        { lat: -27.2333, lon: 153.1417, name: "Turners", group: "Reefs", note: "Local artificial reef structure." },
+  harryatkinson: { lat: -27.4083, lon: 153.2833, name: "Harry Atkinsons", group: "Reefs", note: "Local artificial reef structure." },
+  northmoreton:  { lat: -27.0333, lon: 153.2833, name: "North Moreton", group: "Reefs", note: "Local artificial reef structure." },
+  curtin:        { lat: -27.1083, lon: 153.3700, name: "Curtin", group: "Reefs", note: "Local artificial reef structure." },
   // Beacons -- navigation-marker structures Tod fishes, kept separate from
   // Reefs. Ordered by distance ascending.
-  coffeepots:    { lat: -27.3033, lon: 153.2417, name: "The Coffee Pots" },
-  fourbeacons:   { lat: -27.1083, lon: 153.3333, name: "The Four Beacons" },
-  comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons" }
+  coffeepots:    { lat: -27.3033, lon: 153.2417, name: "The Coffee Pots", group: "Beacons", note: "Navigation beacon, holds bait and structure." },
+  fourbeacons:   { lat: -27.2333, lon: 153.3333, name: "The Four Beacons", group: "Beacons", note: "Navigation beacon, holds bait and structure." }, // updated 2026-09, Tod's call
+  comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons", group: "Beacons", note: "Navigation beacon, holds bait and structure." }
 };
+
+/* group/note added 2026-09 for the Plan a Crossing upgrade below -- group
+   mirrors the #locationSelect optgroup labels above (kept as a second,
+   duplicated source of the same grouping rather than generating
+   #locationSelect's own hardcoded, already-tested markup from this data,
+   to avoid touching working code for this change) and drives
+   buildLocationOptgroupsHTML() for the new crossFromSelect/crossToSelect
+   dropdowns. note is a short, deliberately generic structure descriptor
+   (by location type/group, not researched per-spot intel) used in the new
+   "En route" list and the generated trip prompt -- see findEnRouteStops(). */
+const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons"];
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
 
@@ -2454,6 +2506,126 @@ document.getElementById("wavePrefToggle").addEventListener("change", (e) => {
 let crossFromLoc = { lat: -27.2595, lon: 153.0863, name: "Pelican Park, Clontarf" };
 let crossToLoc = { lat: -27.1630, lon: 153.3684, name: "Tangalooma Wrecks, Moreton Island" };
 
+/* Leave from / Destination as dropdowns (2026-09, Tod's call: "can we use
+   drop downs for leave from and destination with an option to search as
+   well") -- mirrors the exact pattern the main dashboard's own "Search a
+   place" already uses (see searchLocation() above): a search result is
+   added as a one-off "custom" <option> and selected, rather than replacing
+   the dropdown with a text field. Deliberately NOT stored on the shared
+   LOCATIONS.custom slot the main dashboard uses -- Leave from and
+   Destination can each hold their own different custom search result at
+   the same time, and sharing one slot between them (and with the main
+   dashboard's own search) would let one search silently overwrite another.
+   crossFromLoc/crossToLoc stay the actual source of truth; the "custom"
+   option is just a label. */
+function buildLocationOptgroupsHTML() {
+  let html = "";
+  for (const group of LOCATION_GROUPS) {
+    const entries = Object.entries(LOCATIONS).filter(([key, loc]) => loc.group === group);
+    if (!entries.length) continue;
+    html += `<optgroup label="${group}">`;
+    for (const [key, loc] of entries) html += `<option value="${key}">${loc.name}</option>`;
+    html += `</optgroup>`;
+  }
+  return html;
+}
+
+function addOrSelectCustomOption(select, loc) {
+  let opt = select.querySelector('option[value="custom"]');
+  if (!opt) {
+    opt = document.createElement("option");
+    opt.value = "custom";
+    select.appendChild(opt);
+  }
+  opt.textContent = loc.name;
+  select.value = "custom";
+}
+
+// Guarded like populateCrossDaySelect() -- don't reset a user's picks if
+// they leave and come back to this screen.
+function populateCrossLocationSelects() {
+  const fromSel = document.getElementById("crossFromSelect");
+  const toSel = document.getElementById("crossToSelect");
+  if (fromSel.options.length && toSel.options.length) return;
+  const optgroupsHTML = buildLocationOptgroupsHTML();
+  fromSel.innerHTML = optgroupsHTML;
+  toSel.innerHTML = optgroupsHTML;
+  // Preserves the exact defaults this screen always had (Pelican Park,
+  // Clontarf / Tangalooma Wrecks, Moreton Island) as pre-seeded "custom"
+  // options, rather than silently switching the default trip to whichever
+  // named preset happens to be geographically closest.
+  addOrSelectCustomOption(fromSel, crossFromLoc);
+  addOrSelectCustomOption(toSel, crossToLoc);
+}
+
+// Great-circle distance in km -- same formula used for the location-list
+// distance-banding work earlier in this project.
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/* En route stops (2026-09, Tod's call: "use the 23 named presets to make
+   selection easy; use 10km spread to suggest stops"). Projects each named
+   preset onto the straight line between the trip's two points using a
+   planar equirectangular approximation -- accurate enough over Moreton
+   Bay's small span, same simplification already used when this location
+   list was first organised by distance. Only presets that fall strictly
+   between the two endpoints (not right on top of either one) and within
+   corridorKm of the direct line are suggested, ordered by position along
+   the route. Pure geometry, no network call, so this can run instantly on
+   every select change rather than waiting on Check Crossing or Generate
+   Trip Prompt. */
+const EN_ROUTE_CORRIDOR_KM = 10;
+function findEnRouteStops(fromLoc, toLoc, corridorKm) {
+  if (!fromLoc || !toLoc) return [];
+  const lat0 = (fromLoc.lat + toLoc.lat) / 2 * Math.PI / 180;
+  const toXY = (lat, lon) => ({ x: lon * Math.cos(lat0), y: lat });
+  const a = toXY(fromLoc.lat, fromLoc.lon);
+  const b = toXY(toLoc.lat, toLoc.lon);
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return [];
+
+  const stops = [];
+  for (const [key, loc] of Object.entries(LOCATIONS)) {
+    if (!loc.group) continue; // skips LOCATIONS.custom (the main dashboard's own search slot)
+    const p = toXY(loc.lat, loc.lon);
+    const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+    if (t <= 0.03 || t >= 0.97) continue; // essentially at one endpoint -- not a stop "between" them
+    const projX = a.x + t * dx, projY = a.y + t * dy;
+    const distKm = haversineKm(p.y, p.x / Math.cos(lat0), projY, projX / Math.cos(lat0));
+    if (distKm <= corridorKm) stops.push({ key, name: loc.name, note: loc.note || "", distKm, t });
+  }
+  return stops.sort((s1, s2) => s1.t - s2.t);
+}
+
+function renderEnRouteHTML(stops) {
+  if (!stops.length) {
+    return `<div class="gauge-note" style="margin-top:10px;">No named presets fall within ${EN_ROUTE_CORRIDOR_KM}km of the direct route.</div>`;
+  }
+  const items = stops.map(s => `
+    <div class="enroute-item">
+      <div class="enroute-dot"></div>
+      <div>
+        <div class="enroute-name">${s.name}</div>
+        <div class="enroute-note">${s.note}</div>
+        <div class="enroute-dist">~${s.distKm.toFixed(1)}km off the direct line</div>
+      </div>
+    </div>`).join("");
+  return `<div class="field-label" style="margin-top:14px;">En route</div><div class="enroute-list">${items}</div>`;
+}
+
+function updateEnRouteDisplay() {
+  const el = document.getElementById("crossingEnRoute");
+  if (!el) return;
+  el.innerHTML = renderEnRouteHTML(findEnRouteStops(crossFromLoc, crossToLoc, EN_ROUTE_CORRIDOR_KM));
+}
+
 async function geocodePlace(query) {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
   const data = await (await fetch(url)).json();
@@ -2556,6 +2728,143 @@ async function checkCrossing() {
   }
 }
 
+/* Generate Trip Prompt (2026-09, Tod's call) -- assembles the same kind of
+   information Check Crossing shows, plus tide-turn timing and solunar bite
+   windows Check Crossing never fetches, into one block of plain text meant
+   to be pasted into any AI chat. Deliberately does its own independent
+   fetch rather than sharing Check Crossing's -- simpler and more robust
+   than caching between the two buttons (works regardless of which one is
+   clicked first or whether the other was clicked at all), matching how
+   this screen already doesn't share fetches with the main dashboard
+   either. No AI is called from inside this app; this only builds text. */
+async function generateTripPrompt() {
+  const resultEl = document.getElementById("tripPromptResult");
+  if (!crossFromLoc || !crossToLoc) {
+    resultEl.innerHTML = `<div class="card">Pick both a "leave from" place and a destination first.</div>`;
+    return;
+  }
+  const dayOffset = parseInt(document.getElementById("crossDaySelect").value, 10) || 0;
+  const departHour = parseInt(document.getElementById("crossDepartTime").value.split(":")[0], 10);
+  const returnHour = parseInt(document.getElementById("crossReturnTime").value.split(":")[0], 10);
+
+  resultEl.innerHTML = `<div class="skeleton-card"></div>`;
+
+  const marineUrl = (loc) =>
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
+    `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max&timezone=Australia%2FBrisbane&forecast_days=8`;
+
+  try {
+    const [[fromWeather, fromMarine], [toWeather, toMarine]] = await Promise.all([
+      Promise.all([loadWeather(crossFromLoc.lat, crossFromLoc.lon), fetch(marineUrl(crossFromLoc)).then(r => r.json())]),
+      Promise.all([loadWeather(crossToLoc.lat, crossToLoc.lon), fetch(marineUrl(crossToLoc)).then(r => r.json())])
+    ]);
+
+    const dayDateStr = fromWeather?.daily?.time?.[dayOffset] || toWeather?.daily?.time?.[dayOffset] || null;
+    const fromSeries = getDayHourlySeries(fromWeather, fromMarine, dayOffset);
+    const toSeries = getDayHourlySeries(toWeather, toMarine, dayOffset);
+    const fromDepart = getConditionsAtHour(fromSeries, departHour);
+    const toDepart = getConditionsAtHour(toSeries, departHour);
+    const fromReturn = getConditionsAtHour(fromSeries, returnHour);
+    const toReturn = getConditionsAtHour(toSeries, returnHour);
+
+    const fromTurns = dayDateStr ? findQldTideTurns(tidePointsFromMarine(fromMarine), dayDateStr) : [];
+    const toTurns = dayDateStr ? findQldTideTurns(tidePointsFromMarine(toMarine), dayDateStr) : [];
+
+    const sunRiseMin = timeToMinutes(fromWeather?.daily?.sunrise?.[dayOffset]);
+    const sunSetMin = timeToMinutes(fromWeather?.daily?.sunset?.[dayOffset]);
+    // Bite windows use the "leave from" point's moon data -- a bay-wide
+    // simplification (moonrise/set/transit shift only a minute or two
+    // across this trip's scale), same spirit as the main dashboard using
+    // one location's moon lookup for its own Bite times dropdown.
+    const moonData = dayDateStr ? await loadMoonTimes(crossFromLoc.lat, crossFromLoc.lon, dayDateStr) : null;
+    const biteWindows = moonData ? buildBiteWindows(moonData) : [];
+
+    const enRoute = findEnRouteStops(crossFromLoc, crossToLoc, EN_ROUTE_CORRIDOR_KM);
+
+    const prompt = buildTripPromptText({
+      fromName: crossFromLoc.name, toName: crossToLoc.name, dayDateStr,
+      departHour, returnHour, fromDepart, toDepart, fromReturn, toReturn,
+      fromTurns, toTurns, biteWindows, sunRiseMin, sunSetMin, enRoute
+    });
+
+    resultEl.innerHTML = renderTripPromptHTML(prompt);
+    const copyBtn = document.getElementById("copyTripPromptBtn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => {
+        const finish = () => {
+          copyBtn.textContent = "Copied";
+          setTimeout(() => { copyBtn.textContent = "Copy prompt"; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(prompt).then(finish, finish);
+        } else {
+          finish();
+        }
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    resultEl.innerHTML = `<div class="card">Error generating trip prompt. See console for details.</div>`;
+  }
+}
+
+function buildTripPromptText({ fromName, toName, dayDateStr, departHour, returnHour, fromDepart, toDepart, fromReturn, toReturn, fromTurns, toTurns, biteWindows, sunRiseMin, sunSetMin, enRoute }) {
+  const dayLabel = dayDateStr ? `${dayName(dayDateStr)} ${dayDateStr}` : "the selected day";
+  const departTime = minutesToClock(departHour * 60);
+  const returnTime = minutesToClock(returnHour * 60);
+
+  const legPhrase = (pt) => {
+    if (!pt) return "no data";
+    const gustTxt = pt.gust != null ? `, gusts ${pt.gust.toFixed(0)}km/h` : "";
+    const waveTxt = pt.wave != null ? `, wave ${pt.wave.toFixed(2)}m` : "";
+    return `wind ${pt.wind.toFixed(0)}km/h${gustTxt}${waveTxt}`;
+  };
+  const legLine = (name, depart, ret) => `${name}: ${legPhrase(depart)} at launch, ${legPhrase(ret)} at return.`;
+
+  const turnPhrase = (turns) => turns.length
+    ? turns.map(t => `${t.type} tide near ${minutesToClock(t.minutes)}`).join(", ")
+    : "no clear turn that day";
+
+  const biteText = biteWindows.length
+    ? biteWindows.map(w => {
+        const align = alignsWithDawnDusk(w.centerMin, sunRiseMin, sunSetMin);
+        return `${w.label} ${minutesToClock(w.startMin)}-${minutesToClock(w.endMin)}${align ? ` (near ${align})` : ""}`;
+      }).join("; ")
+    : "no solunar data available";
+
+  const enRouteText = enRoute.length
+    ? enRoute.map(s => `${s.name} (${s.note})`).join(", ")
+    : "none of the named presets fall close enough to the direct route to list";
+
+  return `I'm planning a boat trip from ${fromName} to ${toName} on ${dayLabel}, launching ${departTime}, returning ${returnTime}.
+
+Conditions:
+${legLine(fromName, fromDepart, fromReturn)}
+${legLine(toName, toDepart, toReturn)}
+
+Tide: at ${fromName}, ${turnPhrase(fromTurns)}. At ${toName}, ${turnPhrase(toTurns)}.
+
+Bite windows: ${biteText}.
+
+Points of interest en route: ${enRouteText}.
+
+Given this, suggest a sensible route and timing for the day, and where along the way is worth stopping to fish.`;
+}
+
+function renderTripPromptHTML(promptText) {
+  // Routed through textContent/innerHTML rather than manual string
+  // replacement so any character a searched place name might contain is
+  // escaped correctly before landing inside this innerHTML block.
+  const escaper = document.createElement("div");
+  escaper.textContent = promptText;
+  return `<div class="card">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:10px;">Trip prompt</div>
+    <div class="gauge-note" style="margin-bottom:10px;">Paste this into any AI chat for a written trip plan — nothing here calls an AI itself.</div>
+    <pre class="prompt-box">${escaper.innerHTML}</pre>
+    <button type="button" class="action-btn" id="copyTripPromptBtn" style="margin-top:10px;">Copy prompt</button>
+  </div>`;
+}
+
 function populateCrossDaySelect() {
   const select = document.getElementById("crossDaySelect");
   if (select.options.length) return; // already populated, don't reset a user's choice
@@ -2577,12 +2886,28 @@ function populateCrossDaySelect() {
 
 document.getElementById("planCrossingLink").addEventListener("click", () => {
   populateCrossDaySelect();
+  populateCrossLocationSelects();
+  updateEnRouteDisplay();
   document.getElementById("dashboardView").style.display = "none";
   document.getElementById("crossingView").style.display = "block";
 });
 document.getElementById("backToDashboardBtn").addEventListener("click", () => {
   document.getElementById("crossingView").style.display = "none";
   document.getElementById("dashboardView").style.display = "block";
+});
+document.getElementById("crossFromSelect").addEventListener("change", (e) => {
+  if (e.target.value !== "custom") {
+    crossFromLoc = LOCATIONS[e.target.value];
+    document.getElementById("crossFromStatus").textContent = "";
+  }
+  updateEnRouteDisplay();
+});
+document.getElementById("crossToSelect").addEventListener("change", (e) => {
+  if (e.target.value !== "custom") {
+    crossToLoc = LOCATIONS[e.target.value];
+    document.getElementById("crossToStatus").textContent = "";
+  }
+  updateEnRouteDisplay();
 });
 document.getElementById("crossFromSearchBtn").addEventListener("click", async () => {
   const q = document.getElementById("crossFromInput").value.trim();
@@ -2592,7 +2917,9 @@ document.getElementById("crossFromSearchBtn").addEventListener("click", async ()
   const loc = await geocodePlace(q).catch(() => null);
   if (!loc) { status.textContent = `No place found for "${q}".`; return; }
   crossFromLoc = loc;
+  addOrSelectCustomOption(document.getElementById("crossFromSelect"), loc);
   status.textContent = `✓ ${loc.name}`;
+  updateEnRouteDisplay();
 });
 document.getElementById("crossToSearchBtn").addEventListener("click", async () => {
   const q = document.getElementById("crossToInput").value.trim();
@@ -2602,9 +2929,12 @@ document.getElementById("crossToSearchBtn").addEventListener("click", async () =
   const loc = await geocodePlace(q).catch(() => null);
   if (!loc) { status.textContent = `No place found for "${q}".`; return; }
   crossToLoc = loc;
+  addOrSelectCustomOption(document.getElementById("crossToSelect"), loc);
   status.textContent = `✓ ${loc.name}`;
+  updateEnRouteDisplay();
 });
 document.getElementById("planCrossingBtn").addEventListener("click", checkCrossing);
+document.getElementById("generateTripPromptBtn").addEventListener("click", generateTripPrompt);
 
 /* load() only ran once, on first script execution. If the app's WebView stays alive
    in the background (the normal case — Android doesn't necessarily destroy the
