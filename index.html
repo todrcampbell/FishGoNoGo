@@ -470,6 +470,7 @@
   <div class="forecast-row" id="cardsGrid">
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
   </div>
+  <div id="loadStatus" style="text-align:center;font-size:12px;color:#9ca3af;margin:8px 0 0 0;"></div>
 
   <div class="kpi-summary">
     <!-- Collapsed dropdown (2026-09, Tod's call) -- reuses the same small
@@ -1044,6 +1045,19 @@ const SHOW_WIND_SPARKLINE = true;
 // counter lets that stale response recognise itself as stale and no-op,
 // instead of overwriting the new location's card with the old one's data.
 let currentLoadId = 0;
+// Ticking countdown shown under the loading skeleton (2026-11, Tod's call)
+// while the main weather/marine fetch is in flight, so a 30s wait reads as
+// "actively working" instead of a frozen screen. Tracked here so a new
+// load() call (switching location) can cancel a still-running one first.
+let loadCountdownTimer = null;
+function clearLoadCountdown() {
+  if (loadCountdownTimer) {
+    clearInterval(loadCountdownTimer);
+    loadCountdownTimer = null;
+  }
+  const el = document.getElementById("loadStatus");
+  if (el) el.textContent = "";
+}
 // Latest fetched tide points, kept around so the Tide guide's
 // current-phase flag (2026-09) can compute "where am I now" against
 // whichever location is currently loaded, without a separate fetch.
@@ -1683,8 +1697,16 @@ function hasValidData(arr) {
    just waits forever). Every network call in the main load path goes
    through this wrapper so a slow/unresponsive request surfaces as a
    normal catch-able error (handled below with a Retry button) instead
-   of leaving the page stuck indefinitely. */
-const FETCH_TIMEOUT_MS = 9000;
+   of leaving the page stuck indefinitely.
+
+   Bumped 9s -> 30s (2026-11, Tod's call): Open-Meteo has been having real
+   upstream slowdowns this month, not just outright failures -- a request
+   that's merely slow can still succeed if given enough rope. 9s was
+   cutting those off before they had a chance, turning "slow but working"
+   into an immediate, avoidable error. 30s keeps a hard ceiling (so a truly
+   dead request still can't hang forever) while giving a genuinely slow
+   response a real chance to come back. */
+const FETCH_TIMEOUT_MS = 30000;
 async function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -2292,8 +2314,24 @@ async function load() {
     ? `Note: tide accuracy is more limited in a narrow passage like ${name.split("–")[0].trim()} than in the open bay.`
     : "";
 
+  clearLoadCountdown();
+  const timeoutS = Math.round(FETCH_TIMEOUT_MS / 1000);
+  let remainingS = timeoutS;
   document.getElementById("cardsGrid").innerHTML =
     `<div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>`;
+  // loadStatus lives outside #cardsGrid (which is display:flex, the
+  // horizontal day-scroller) as its own full-width element, same pattern as
+  // gaugeNote just above it -- so this stays centered and readable instead
+  // of getting swept into the scrollable row as a second flex item.
+  const loadStatusEl = document.getElementById("loadStatus");
+  loadStatusEl.textContent = `Loading conditions… (up to ${remainingS}s)`;
+  loadCountdownTimer = setInterval(() => {
+    if (loadId !== currentLoadId) { clearLoadCountdown(); return; } // stale -- a newer load() took over
+    remainingS -= 1;
+    loadStatusEl.textContent = remainingS > 0
+      ? `Loading conditions… (up to ${remainingS}s)`
+      : "Still waiting on weather data…";
+  }, 1000);
 
   try {
     const [weather, marine] = await Promise.all([
@@ -2355,6 +2393,7 @@ async function load() {
       </div>`;
     });
 
+    clearLoadCountdown();
     document.getElementById("cardsGrid").innerHTML = cardsHTML;
 
     // Bite times (solunar) and Commentary -- fired after the grid is already
@@ -2388,6 +2427,7 @@ async function load() {
     });
 
   } catch (e) {
+    clearLoadCountdown();
     console.error(e);
     const isTimeout = /timed out/i.test(e?.message || "");
     document.getElementById("cardsGrid").innerHTML =
