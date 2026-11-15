@@ -1231,10 +1231,25 @@ function renderComfortSparkline(series, metric) {
   const threshY = (height - pad - (comfortLine / maxV) * (height - pad * 2)).toFixed(1);
   const label = metric === "wave" ? "wave height" : (metric === "gust" ? "wind gusts" : (metric === "rain" ? "rainfall" : "wind speed"));
 
+  // Subtle time markers (2026-11, Tod's call): three small "+" marks on the
+  // comfort-threshold line itself at 6am/12pm/6pm -- not labeled, not on the
+  // (wavy) data line, no change to width/height/pad. Since the threshold
+  // line is flat, the marks read as a broken dash pattern rather than dots
+  // floating at different heights.
+  const tickHours = [6, 12, 18].filter(h => h < series.length);
+  const marks = tickHours.map(h => {
+    const x = (pad + h * stepX).toFixed(1);
+    return `<line x1="${x - 3}" y1="${threshY}" x2="${+x + 3}" y2="${threshY}"
+              stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" />
+            <line x1="${x}" y1="${threshY - 3}" x2="${x}" y2="${+threshY + 3}"
+              stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" />`;
+  }).join("");
+
   return `<div style="font-size:10px;color:#9ca3af;margin-top:6px;">${label}</div>
   <svg viewBox="0 0 ${width} ${height}" style="width:100%;height:54px;display:block;" preserveAspectRatio="none">
     <line x1="0" y1="${threshY}" x2="${width}" y2="${threshY}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" />
     <polyline points="${points.join(" ")}" fill="none" stroke="#60a5fa" stroke-width="2" />
+    ${marks}
   </svg>`;
 }
 
@@ -1661,6 +1676,30 @@ function hasValidData(arr) {
   return Array.isArray(arr) && arr.some(v => v !== null && v !== undefined);
 }
 
+/* Stall protection (2026-11, Tod's call -- app was occasionally hanging
+   on a blank cards area with no error and no way to recover besides a
+   manual reload, traced to fetch() calls with no timeout: if BOM, the
+   Open-Meteo fallback, or the marine API is slow to answer, the browser
+   just waits forever). Every network call in the main load path goes
+   through this wrapper so a slow/unresponsive request surfaces as a
+   normal catch-able error (handled below with a Retry button) instead
+   of leaving the page stuck indefinitely. */
+const FETCH_TIMEOUT_MS = 9000;
+async function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } catch (e) {
+    if (e.name === "AbortError") {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function loadWeather(lat, lon) {
   const bomUrl =
     `https://api.open-meteo.com/v1/bom?latitude=${lat}&longitude=${lon}` +
@@ -1669,7 +1708,7 @@ async function loadWeather(lat, lon) {
     `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
 
   try {
-    const res = await fetch(bomUrl);
+    const res = await fetchWithTimeout(bomUrl);
     const data = await res.json();
     if (hasValidData(data?.hourly?.wind_speed_10m) && hasValidData(data?.hourly?.surface_pressure)) {
       return data;
@@ -1684,7 +1723,7 @@ async function loadWeather(lat, lon) {
     `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
     `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
 
-  return await (await fetch(fallbackUrl)).json();
+  return await (await fetchWithTimeout(fallbackUrl)).json();
 }
 
 
@@ -2259,7 +2298,7 @@ async function load() {
   try {
     const [weather, marine] = await Promise.all([
       loadWeather(lat, lon),
-      fetch(
+      fetchWithTimeout(
         `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
         `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
         `&timezone=Australia%2FBrisbane&forecast_days=8`
@@ -2350,8 +2389,14 @@ async function load() {
 
   } catch (e) {
     console.error(e);
+    const isTimeout = /timed out/i.test(e?.message || "");
     document.getElementById("cardsGrid").innerHTML =
-      "<div class='card'>Error loading data. Check console for details.</div>";
+      `<div class="card">${isTimeout
+        ? "Weather data is taking longer than usual to load."
+        : "Error loading data. Check console for details."}
+      <button type="button" class="action-btn" id="retryLoadBtn" style="display:block;margin-top:10px;">Retry</button></div>`;
+    const retryBtn = document.getElementById("retryLoadBtn");
+    if (retryBtn) retryBtn.addEventListener("click", load);
   }
 }
 
