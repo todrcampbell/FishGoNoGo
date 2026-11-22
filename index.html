@@ -311,6 +311,21 @@
     border-radius: 8px; padding: 8px 10px; margin: 4px 0 10px 0;
   }
   .safe-until-good { color: #6ee7b7; background: rgba(52, 211, 153, 0.08); }
+  /* Storm risk / wind-against-current (2026-11, "implement") -- card-level
+     banners. Storm risk is a real safety flag, so it gets the NO-GO red
+     family rather than the usual muted gauge-note gray -- it needs to read
+     as more urgent than a disclaimer. Wind-against-current is cautionary
+     but less acute, so it sits in the amber family instead. */
+  .storm-flag {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(248, 113, 113, 0.14); color: #fca5a5;
+    border-radius: 8px; padding: 7px 10px; font-size: 13px; font-weight: 600; margin: 8px 0;
+  }
+  .current-flag {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(252, 211, 77, 0.14); color: #fcd34d;
+    border-radius: 8px; padding: 7px 10px; font-size: 13px; font-weight: 600; margin: 8px 0;
+  }
   /* Tide guide (2026-09, Tod's call; renamed from "Tide Phase Planner") --
      a page-level reference (see
      the <details> in .kpi-summary below), not per-card: 8 phase buttons in
@@ -1152,7 +1167,7 @@ async function cacheAllLocations() {
         loadWeather(loc.lat, loc.lon),
         fetchWithTimeout(
           `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
-          `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
+          `&hourly=wave_height,sea_level_height_msl,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,wave_period&daily=wave_height_max` +
           `&timezone=Australia%2FBrisbane&forecast_days=8`
         ).then(r => r.json())
       ]);
@@ -1290,19 +1305,68 @@ const WAVE_COMFORT_M = WAVE_TURNBACK_M / 2;   // 0.75m — comfortably below tha
 const GUST_COMFORT_KMH = 30; // gusts run naturally higher than sustained wind — a judgment-call default, adjustable
 const RAIN_COMFORT_MM = 1;
 
+/* Wind-against-current (2026-11, Tod's call: "it's only important to bay
+   locations and crossing" -- restricted to the 11 open-water presets
+   (Reefs/Beacons/Moreton Island groups) plus the Plan a Crossing feature,
+   which is exempt from the group check since a crossing is open-bay travel
+   by definition. Uses Open-Meteo's own ocean_current_direction/velocity
+   directly rather than deriving a geographic flow rule, per discussion --
+   the model's resolution is coarse (~8km) but still more defensible than a
+   hand-built "which way does the bay drain" assumption.
+
+   Open-Meteo gives wind_direction_10m as the direction the wind blows FROM
+   (meteorological convention) and ocean_current_direction as the direction
+   the current flows TOWARDS (oceanographic convention). Wind opposes a
+   current when the wind is blowing (from windDir, i.e. towards windDir+180)
+   roughly opposite to the current's travel direction -- which works out to
+   windDir itself landing close to currentDir. CURRENT_OPPOSE_ANGLE_DEG,
+   CURRENT_MIN_FLAG_KMH and WIND_MIN_FOR_CURRENT_KMH are judgment-call
+   defaults, not sourced from a reference the way the CAPE/wave-period
+   thresholds below are -- worth Tod's own on-the-water correction once this
+   has had a chance to be checked against real trips. */
+const CURRENT_FLAG_GROUPS = new Set(["Reefs", "Beacons", "Moreton Island"]);
+const CURRENT_OPPOSE_ANGLE_DEG = 50;
+const CURRENT_MIN_FLAG_KMH = 1;
+const WIND_MIN_FOR_CURRENT_KMH = 15;
+
+function angularDiff(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+function windAgainstCurrent(windDir, windSpeed, currentDir, currentVel) {
+  if (windDir == null || windSpeed == null || currentDir == null || currentVel == null) return false;
+  if (windSpeed < WIND_MIN_FOR_CURRENT_KMH) return false;
+  if (currentVel < CURRENT_MIN_FLAG_KMH) return false;
+  return angularDiff(windDir, currentDir) <= CURRENT_OPPOSE_ANGLE_DEG;
+}
+
 function getDayHourlySeries(weather, marine, dayOffset) {
   const dateStr = weather?.daily?.time?.[dayOffset]?.slice(0, 10);
   if (!dateStr) return [];
   const wTimes = weather?.hourly?.time || [];
   const wSpeeds = weather?.hourly?.wind_speed_10m || [];
+  const wDirs = weather?.hourly?.wind_direction_10m || [];
   const wGusts = weather?.hourly?.wind_gusts_10m || [];
   const wRain = weather?.hourly?.precipitation || [];
   const mTimes = marine?.hourly?.time || [];
   const mWaves = marine?.hourly?.wave_height || [];
+  // currentVel/currentDir (2026-11, "implement") -- only populated when the
+  // caller's marine fetch asked for ocean_current_velocity/direction (the
+  // main dashboard load() and Plan a Crossing's checkCrossing do; the Trip
+  // Prompt generator doesn't, so these stay null there and currentFlag
+  // below just comes out false, same as any other missing-data case).
+  const mCurrentVel = marine?.hourly?.ocean_current_velocity || [];
+  const mCurrentDir = marine?.hourly?.ocean_current_direction || [];
 
   const waveByHourKey = {};
+  const currentVelByHourKey = {};
+  const currentDirByHourKey = {};
   for (let i = 0; i < mTimes.length; i++) {
-    if (mWaves[i] != null) waveByHourKey[mTimes[i].slice(0, 13)] = mWaves[i];
+    const key = mTimes[i].slice(0, 13);
+    if (mWaves[i] != null) waveByHourKey[key] = mWaves[i];
+    if (mCurrentVel[i] != null) currentVelByHourKey[key] = mCurrentVel[i];
+    if (mCurrentDir[i] != null) currentDirByHourKey[key] = mCurrentDir[i];
   }
 
   const series = [];
@@ -1310,8 +1374,15 @@ function getDayHourlySeries(weather, marine, dayOffset) {
     if (!wTimes[i].startsWith(dateStr)) continue;
     if (wSpeeds[i] == null) continue;
     const hour = parseInt(wTimes[i].slice(11, 13), 10);
-    const wave = waveByHourKey[wTimes[i].slice(0, 13)];
-    series.push({ hour, wind: wSpeeds[i], wave: wave != null ? wave : null, gust: wGusts[i] != null ? wGusts[i] : null, rain: wRain[i] != null ? wRain[i] : null });
+    const hourKey = wTimes[i].slice(0, 13);
+    const wave = waveByHourKey[hourKey];
+    series.push({
+      hour, wind: wSpeeds[i], windDir: wDirs[i] != null ? wDirs[i] : null,
+      wave: wave != null ? wave : null, gust: wGusts[i] != null ? wGusts[i] : null,
+      rain: wRain[i] != null ? wRain[i] : null,
+      currentVel: currentVelByHourKey[hourKey] != null ? currentVelByHourKey[hourKey] : null,
+      currentDir: currentDirByHourKey[hourKey] != null ? currentDirByHourKey[hourKey] : null
+    });
   }
   return series;
 }
@@ -1795,6 +1866,32 @@ function wavePoints(h) {
   return { score: 0, tier: "rough" };
 }
 
+/* Wave/swell period refinement (2026-11, "implement") -- height alone can't
+   tell short wind chop apart from a long, easy swell at the same reading;
+   this just refines the existing wave blurb's wording, no new score and no
+   new UI. Thresholds are BOM's own published bands (bom.gov.au/resources/
+   .../waves-and-swell): short swell <8s, average 8-11s, long swell >11s.
+   Only short and long get called out -- "average" is the unremarkable
+   middle case the plain height-based wording already covers, so adding a
+   clause for it too would just be noise on most days. */
+const WAVE_PERIOD_SHORT_S = 8;
+const WAVE_PERIOD_LONG_S = 11;
+function wavePeriodClause(periodS) {
+  if (periodS == null) return "";
+  if (periodS < WAVE_PERIOD_SHORT_S) return ", short-period and choppier than the height alone suggests";
+  if (periodS > WAVE_PERIOD_LONG_S) return ", a long easy swell despite the height";
+  return "";
+}
+
+/* Storm risk / CAPE (2026-11, "implement") -- CAPE itself is never shown or
+   named to the user (Tod's call: "drop the mention of cape as people won't
+   know what it means"), just used to decide whether the red banner shows.
+   Threshold is NWS's own published bands (weather.gov/ilx/
+   swop-severetopics-CAPE): weak <1000 J/kg, moderate 1000-2500, strong
+   2500-4000, extreme >4000. Flags at moderate-and-up rather than waiting
+   for strong, since this app's job is a heads-up, not a storm forecast. */
+const CAPE_STORM_THRESHOLD = 1000;
+
 /* Pressure trend and fishing: falling pressure ahead of a front is widely regarded
    by anglers as prime feeding time (fish often bite aggressively before a system
    arrives); a sharp, fast-moving drop (a front actively passing) tends to shut the
@@ -1814,10 +1911,6 @@ function pressurePoints(pDiff, pAbs) {
   if (pAbs < 1010) score = Math.max(0, score - 2);
   score = Math.min(20, Math.max(0, score));
   return { score, label };
-}
-
-function hasValidData(arr) {
-  return Array.isArray(arr) && arr.some(v => v !== null && v !== undefined);
 }
 
 /* Stall protection (2026-11, Tod's call -- app was occasionally hanging
@@ -1852,30 +1945,22 @@ async function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
   }
 }
 
+// BOM removed (2026-11, Tod's call, confirmed live from his own browser
+// console) -- it used to be tried first with a fallback to Open-Meteo's
+// general forecast model if it failed. Live testing showed BOM responds
+// fast (HTTP 200 in ~300ms) but every single hourly field comes back null
+// across all 8 days -- not a timeout or an error, just structurally empty
+// data. Since it can never contribute anything, there's no reason to call
+// it at all; this goes straight to the forecast endpoint that was always
+// the fallback.
 async function loadWeather(lat, lon) {
-  const bomUrl =
-    `https://api.open-meteo.com/v1/bom?latitude=${lat}&longitude=${lon}` +
-    `&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,surface_pressure` +
-    `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
-    `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
-
-  try {
-    const res = await fetchWithTimeout(bomUrl);
-    const data = await res.json();
-    if (hasValidData(data?.hourly?.wind_speed_10m) && hasValidData(data?.hourly?.surface_pressure)) {
-      return data;
-    }
-  } catch (e) {
-    console.warn("BOM failed, fallback...", e);
-  }
-
-  const fallbackUrl =
+  const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,surface_pressure` +
-    `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
+    `&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,surface_pressure,precipitation_probability,visibility` +
+    `&daily=surface_pressure_mean,wind_direction_10m_dominant,precipitation_sum,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,cape_max` +
     `&wind_speed_unit=kmh&timezone=Australia%2FBrisbane&forecast_days=8`;
 
-  return await (await fetchWithTimeout(fallbackUrl)).json();
+  return await (await fetchWithTimeout(url)).json();
 }
 
 
@@ -1898,7 +1983,7 @@ function bandFor(checksSubset) {
 
 /* Computes one day's full score. Shared by "today" and each of the next 7 days
    so both use identical logic (previously they diverged, especially for pressure). */
-function computeDayScore(weather, marine, qldPoints, dayOffset) {
+function computeDayScore(weather, marine, qldPoints, dayOffset, locationGroup) {
   const dawnIdx = getHourIndexForDay(weather, dayOffset, 6);
   const duskIdx = getHourIndexForDay(weather, dayOffset, 18);
 
@@ -1994,6 +2079,13 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
     } else {
       waveBlurb = waveBlurbs[(dawnInfo || duskInfo).tier];
     }
+    // Wave/swell period refinement (2026-11, "implement") -- wording only,
+    // see wavePeriodClause above. Prefers dawn's period reading (same
+    // "dawn first" preference as bestWindow further down); falls back to
+    // dusk's when dawn's isn't available.
+    const periodRaw = (waveDawnIdx !== null ? marine?.hourly?.wave_period?.[waveDawnIdx] : null)
+      ?? (waveDuskIdx !== null ? marine?.hourly?.wave_period?.[waveDuskIdx] : null);
+    waveBlurb += wavePeriodClause(periodRaw);
 
     waveCheck = { name: parts.join(" · "), pass: avgScore > 0, score: avgScore, maxScore: 20, valid: true, icon: "🌊", blurb: waveBlurb, dawn: dawnInfo, dusk: duskInfo };
   }
@@ -2056,7 +2148,31 @@ function computeDayScore(weather, marine, qldPoints, dayOffset) {
   const tempMin = weather?.daily?.temperature_2m_min?.[dayOffset];
   const looksRainy = dayLooksRainy(weather, dayOffset);
 
-  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, boatingBand, fishingBand };
+  // STORM RISK (CAPE) -- card-level safety banner, not part of the score.
+  // Daily max only (no hourly cape fetched), so this can't say exactly when
+  // this afternoon the risk peaks -- the banner text itself says "this
+  // afternoon" generically, which is when CAPE-driven storms typically
+  // build in SE Queensland regardless of the exact hour.
+  const capeMax = weather?.daily?.cape_max?.[dayOffset];
+  const stormFlag = capeMax != null && capeMax >= CAPE_STORM_THRESHOLD;
+
+  // WIND-AGAINST-CURRENT -- card-level caution banner, scoped to the 11
+  // open-water presets (see CURRENT_FLAG_GROUPS above). Sampled at midday,
+  // matching the banner's own "around midday" wording, rather than at
+  // dawn/dusk like the scored checks -- this is a trip-planning heads-up,
+  // not something that feeds the score.
+  let currentFlag = false;
+  if (CURRENT_FLAG_GROUPS.has(locationGroup)) {
+    const middayWIdx = getHourIndexForDay(weather, dayOffset, 12);
+    const middayMIdx = getHourIndexForDay(marine, dayOffset, 12);
+    const middayWindDir = middayWIdx !== null ? weather.hourly.wind_direction_10m?.[middayWIdx] : null;
+    const middayWindSpeed = middayWIdx !== null ? weather.hourly.wind_speed_10m?.[middayWIdx] : null;
+    const middayCurrentDir = middayMIdx !== null ? marine?.hourly?.ocean_current_direction?.[middayMIdx] : null;
+    const middayCurrentVel = middayMIdx !== null ? marine?.hourly?.ocean_current_velocity?.[middayMIdx] : null;
+    currentFlag = windAgainstCurrent(middayWindDir, middayWindSpeed, middayCurrentDir, middayCurrentVel);
+  }
+
+  return { checks, score, status, rawMax, bestWindow, tideAgrees, tideTimes: tideResult.turnsLabel || null, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, boatingBand, fishingBand, stormFlag, currentFlag };
 }
 
 function capitalize(s) {
@@ -2261,7 +2377,92 @@ function timeOfDayLabel(mins) {
    Needs moonData, so like Bite times it's patched in once CycleCalcs
    resolves rather than rendered upfront -- see the loadMoonTimes.then()
    block in load(). */
-function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin) {
+/* Water temperature (2026-11, "implement") -- Tod's call was to never show
+   this on the card face (it rode on the heading-temp line in early mockups,
+   then got pulled per "can we give meaning to the water temp in the
+   commentary and not show it on the top of the card"), only as an
+   interpreted sentence here. Reads one representative midday sample off
+   the marine series rather than a dawn/dusk pair like wind/wave/rain --
+   water temp doesn't swing meaningfully across a single day the way air
+   conditions do, so one number is enough to characterize the day.
+   WATER_TEMP_SLUGGISH_C/COMFORT_MAX_C are NOT sourced from a species-
+   specific reference -- a search for Moreton Bay bream/flathead/whiting
+   water-temp comfort bands came back with nothing better than fishing-
+   magazine color, so these are general subtropical-estuarine-fish
+   reasoning, flagged here the same way they were flagged when the mockup
+   first showed them: a placeholder pending Tod's own on-the-water read. */
+const WATER_TEMP_SLUGGISH_C = 17;
+const WATER_TEMP_COMFORT_MAX_C = 28;
+function waterTempNote(marine, dayOffset) {
+  const idx = getHourIndexForDay(marine, dayOffset, 12);
+  const temp = idx != null ? marine?.hourly?.sea_surface_temperature?.[idx] : null;
+  if (temp == null) return null;
+  const t = Math.round(temp);
+  if (temp < WATER_TEMP_SLUGGISH_C) {
+    return `Water's cooled to ${t}°C — expect a slower bite than usual, fish holding deeper and less willing to chase.`;
+  }
+  if (temp > WATER_TEMP_COMFORT_MAX_C) {
+    return `Water's warmed to ${t}°C — fish can get sluggish and oxygen-stressed in the shallows once it runs this warm.`;
+  }
+  return `Water's a comfortable ${t}°C — good conditions for active feeding.`;
+}
+
+/* Rain probability (2026-11, "implement") -- a confidence qualifier on top
+   of the existing amount-based rain blurb (already in `checks`/`strong`/
+   `soft` above), not a replacement for it. Only speaks up when probability
+   tells a different story than the amount alone would suggest -- a
+   confidently-dry OR confidently-wet day gets no new text, since the
+   existing blurb already covers those cases fine. */
+const RAIN_PROB_ELEVATED_PCT = 50;
+const RAIN_PROB_COINFLIP_PCT = 40;
+function rainProbabilityNote(weather, dayOffset) {
+  const dawnIdx = getHourIndexForDay(weather, dayOffset, 6);
+  const duskIdx = getHourIndexForDay(weather, dayOffset, 18);
+  const probs = [];
+  if (dawnIdx != null && weather.hourly.precipitation_probability?.[dawnIdx] != null) probs.push(weather.hourly.precipitation_probability[dawnIdx]);
+  if (duskIdx != null && weather.hourly.precipitation_probability?.[duskIdx] != null) probs.push(weather.hourly.precipitation_probability[duskIdx]);
+  if (!probs.length) return null;
+  const maxProb = Math.max(...probs);
+
+  const rainDawnMm = precipNear(weather, dayOffset, 6, 1);
+  const rainDuskMm = precipNear(weather, dayOffset, 18, 1);
+  const amountLooksDry = (rainDawnMm ?? 0) < 1 && (rainDuskMm ?? 0) < 1;
+
+  if (amountLooksDry && maxProb >= RAIN_PROB_ELEVATED_PCT) {
+    return `Totals look light, but there's a ${Math.round(maxProb)}% chance of rain around dawn or dusk — worth packing a jacket just in case.`;
+  }
+  if (!amountLooksDry && maxProb < RAIN_PROB_COINFLIP_PCT) {
+    return `That rain isn't a sure thing though — only about a ${Math.round(maxProb)}% chance of it actually hitting.`;
+  }
+  return null;
+}
+
+/* UV (2026-11, "implement") -- standard WHO/EPA bands, confident enough not
+   to need the same placeholder caveat as water temp above. Only mentioned
+   High (6) and up, per Tod's call to keep this to the days it actually
+   matters rather than a sun-safety note on every card. */
+const UV_NOTE_THRESHOLD = 6;
+function uvNote(weather, dayOffset) {
+  const uv = weather?.daily?.uv_index_max?.[dayOffset];
+  if (uv == null || uv < UV_NOTE_THRESHOLD) return null;
+  const band = uv >= 11 ? "extreme" : uv >= 8 ? "very high" : "high";
+  return `UV will hit ${band} (${Math.round(uv)}) around midday — take sun protection if you're staying out that long.`;
+}
+
+/* Fog/visibility (2026-11, "implement") -- dawn-focused only, since that's
+   when Tod's actually heading out. 2000m is deliberately looser than the
+   classic <1000m fog definition -- more inclusive of the hazy, reduced-
+   visibility mornings that matter for a small-boat trip even short of
+   textbook fog. */
+const FOG_VISIBILITY_M = 2000;
+function fogNote(weather, dayOffset) {
+  const idx = getHourIndexForDay(weather, dayOffset, 6);
+  const vis = idx != null ? weather?.hourly?.visibility?.[idx] : null;
+  if (vis == null || vis >= FOG_VISIBILITY_M) return null;
+  return "Patchy fog's likely at dawn, so visibility may be reduced heading out early.";
+}
+
+function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin, weather, marine, dayOffset, stormFlag, currentFlag) {
   const valid = checks.filter(c => c.valid && c.blurb);
   if (!valid.length) return "Not enough data to summarize today's conditions.";
 
@@ -2271,11 +2472,35 @@ function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin) {
   const strong = ranked.filter(c => c.ratio >= 0.65).map(c => c.blurb);
   const soft = ranked.filter(c => c.ratio < 0.65).map(c => c.blurb);
 
-  let text = strong.length
-    ? `${capitalize(joinNatural(strong))}.`
-    : `${capitalize(joinNatural(soft))}.`;
+  const openingCore = strong.length ? capitalize(joinNatural(strong)) : capitalize(joinNatural(soft));
+  // Storm-risk / wind-against-current flags (2026-11, "implement") -- woven
+  // into the opening sentence as a trailing clause rather than a separate
+  // sentence, matching the approved mockup; the card-level banner (see
+  // renderCard) already states the flag on its own, so this just ties it
+  // back into the narrative. Storm risk wins when both are true the same
+  // day -- it's the more acute of the two.
+  let flagClause = "";
+  if (stormFlag) flagClause = ", with a storm risk building this afternoon on top of it";
+  else if (currentFlag) flagClause = ", with wind against the current around midday the only thing to watch for";
+
+  let text = `${openingCore}${flagClause}.`;
   if (strong.length && soft.length) {
     text += ` ${capitalize(joinNatural(soft))} takes some of the shine off.`;
+  }
+
+  // Newly-added Open-Meteo data (2026-11, "implement") -- water temp, rain
+  // probability, UV and fog each fold in as their own sentence when they
+  // have something worth saying; water temp always does (when data's
+  // there), the other three are conditional -- see each helper above.
+  if (weather && marine && dayOffset != null) {
+    const waterNote = waterTempNote(marine, dayOffset);
+    if (waterNote) text += ` ${waterNote}`;
+    const rainNote = rainProbabilityNote(weather, dayOffset);
+    if (rainNote) text += ` ${rainNote}`;
+    const uvText = uvNote(weather, dayOffset);
+    if (uvText) text += ` ${uvText}`;
+    const fogText = fogNote(weather, dayOffset);
+    if (fogText) text += ` ${fogText}`;
   }
 
   // Each window carries which one of dawn/dusk it actually lines up with (or
@@ -2334,7 +2559,7 @@ function buildScoringSentence(checks) {
 }
 
 function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayLabel) {
-  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, scoringSentence } = result;
+  const { status, score, tideTimes, safeUntil, windSparkSVG, tempMax, tempMin, looksRainy, scoringSentence, stormFlag, currentFlag } = result;
   // Share data lives on the pill itself (data-share, JSON) rather than a
   // separate button -- see buildShareText/shareCard. NO-DATA days have
   // nothing worth sharing, so the pill stays inert for those.
@@ -2346,6 +2571,14 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
   // that (or the same-family 🌙) here risked one icon meaning two different
   // things on the card. ⚓ is unambiguous and unused elsewhere on the card.
   const tideTimesHTML = tideTimes ? `<div class="tide-times">⚓ ${tideTimes}</div>` : "";
+  // Storm risk / wind-against-current (2026-11, "implement") -- card-level
+  // safety/caution banners, positioned after tide times and before
+  // "safe until", matching the approved mockup. CAPE is never named to the
+  // user (Tod's call); this is also echoed as a clause in the Commentary
+  // paragraph itself (see buildConditionsCommentary) so the narrative ties
+  // back to it instead of leaving the banner to speak entirely alone.
+  const stormFlagHTML = stormFlag ? `<div class="storm-flag">⚡ Storm risk building this afternoon</div>` : "";
+  const currentFlagHTML = currentFlag ? `<div class="current-flag">🌊 Wind against current around midday — expect steeper chop</div>` : "";
   // Commentary + Scoring, one dropdown (2026-09, Tod's call) -- previously
   // two separate dropdowns stacked here; folded into one so the narrative
   // paragraph and the row-by-row checklist that backs it up live together,
@@ -2405,6 +2638,8 @@ function renderCard(dateStr, result, extraClass, headingHTML, locationName, dayL
       </div>
       ${headingWithTempHTML}
       ${tideTimesHTML}
+      ${stormFlagHTML}
+      ${currentFlagHTML}
       ${safeUntilHTML}
       ${commentaryDetailsHTML}
       ${biteDetailsHTML}`;
@@ -2435,7 +2670,7 @@ function renderWeekChipGridHTML(dayResults) {
    the deferred Bite-times/Commentary lookups. Throws if weather data is
    unusable, same as this code did inline before the split, so both callers
    handle that failure the same way. */
-function renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote) {
+function renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote, locationGroup) {
   const qldPoints = tidePointsFromMarine(marine);
   lastQldPoints = qldPoints;
 
@@ -2451,7 +2686,7 @@ function renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeN
   const dayResults = [];
   for (let i = 0; i <= 7; i++) {
     const date = weather.daily.time[i];
-    const r = computeDayScore(weather, marine, qldPoints, i);
+    const r = computeDayScore(weather, marine, qldPoints, i, locationGroup);
     r.scoringSentence = renderChecklist(r.checks);
     dayResults.push({ i, date, r });
   }
@@ -2514,7 +2749,7 @@ function renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeN
       const commentaryDetails = document.getElementById(`commentaryToggle-${date}`);
       if (commentaryDetails) {
         const body = commentaryDetails.querySelector(".commentary");
-        if (body) body.textContent = buildConditionsCommentary(r.checks, moonData, sunRiseMin, sunSetMin);
+        if (body) body.textContent = buildConditionsCommentary(r.checks, moonData, sunRiseMin, sunSetMin, weather, marine, i, r.stormFlag, r.currentFlag);
       }
     });
   });
@@ -2558,12 +2793,12 @@ async function load() {
       loadWeather(lat, lon),
       fetchWithTimeout(
         `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
-        `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
+        `&hourly=wave_height,sea_level_height_msl,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,wave_period&daily=wave_height_max` +
         `&timezone=Australia%2FBrisbane&forecast_days=8`
       ).then(r => r.json())
     ]);
 
-    renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote);
+    renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote, loc.group);
     clearLoadCountdown();
     saveLocationCache(key, weather, marine);
 
@@ -2580,7 +2815,7 @@ async function load() {
     const cached = loadLocationCache(key);
     if (cached) {
       try {
-        renderWeatherMarineInto(cached.weather, cached.marine, lat, lon, name, loadId, gaugeNote);
+        renderWeatherMarineInto(cached.weather, cached.marine, lat, lon, name, loadId, gaugeNote, loc.group);
         loadStatusEl.innerHTML =
           `Couldn't refresh — showing cached data from ${formatCacheAge(Date.now() - cached.savedAt)}. ` +
           `<button type="button" class="link-button" id="retryLoadBtn" style="display:inline;padding:0;margin:0;">Retry</button>`;
@@ -2892,7 +3127,12 @@ function getConditionsAtHour(series, hour) {
   if (pt.wind > WIND_COMFORT_KMH) causes.push("wind");
   if (pt.gust != null && pt.gust > GUST_COMFORT_KMH) causes.push("gusts");
   if (pt.wave != null && pt.wave > WAVE_COMFORT_M) causes.push("waves");
-  return { ...pt, comfortable: causes.length === 0, causes };
+  // Wind-against-current (2026-11, "implement") -- kept separate from the
+  // comfortable/causes pass-fail above, same split as the main dashboard's
+  // card-level banner vs its GO/MAYBE/NO-GO score: this is a "watch for
+  // steeper chop" caution, not folded into whether the leg itself passes.
+  const currentFlag = windAgainstCurrent(pt.windDir, pt.wind, pt.currentDir, pt.currentVel);
+  return { ...pt, comfortable: causes.length === 0, causes, currentFlag };
 }
 
 function renderCrossingLegHTML(label, pt) {
@@ -2902,7 +3142,8 @@ function renderCrossingLegHTML(label, pt) {
   const gustTxt = pt.gust != null ? `, gusts ${pt.gust.toFixed(0)}km/h` : "";
   const waveTxt = pt.wave != null ? `, wave ${pt.wave.toFixed(2)}m` : "";
   const causeTxt = pt.causes.length ? ` (${pt.causes.join(", ")})` : "";
-  return `<div class="check ${cls}">${tick} ${label}: wind ${pt.wind.toFixed(0)}km/h${gustTxt}${waveTxt}${causeTxt}</div>`;
+  const currentTxt = pt.currentFlag ? ` <span style="color:#fcd34d;">· 🌊 wind against current</span>` : "";
+  return `<div class="check ${cls}">${tick} ${label}: wind ${pt.wind.toFixed(0)}km/h${gustTxt}${waveTxt}${causeTxt}${currentTxt}</div>`;
 }
 
 function renderCrossingResultHTML({ fromName, toName, dayDateStr, departHour, returnHour, fromDepart, toDepart, fromReturn, toReturn }) {
@@ -2949,9 +3190,13 @@ async function checkCrossing() {
 
   resultEl.innerHTML = `<div class="skeleton-card"></div>`;
 
+  // Wind-against-current (2026-11, Tod's call: "it's only important to bay
+  // locations and crossing") -- a crossing is open-bay travel by definition,
+  // so unlike the main dashboard's per-location group check, this always
+  // fetches current data regardless of which two points were picked.
   const marineUrl = (loc) =>
     `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
-    `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max&timezone=Australia%2FBrisbane&forecast_days=8`;
+    `&hourly=wave_height,sea_level_height_msl,ocean_current_velocity,ocean_current_direction&daily=wave_height_max&timezone=Australia%2FBrisbane&forecast_days=8`;
 
   try {
     const [[fromWeather, fromMarine], [toWeather, toMarine]] = await Promise.all([
