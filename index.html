@@ -180,10 +180,28 @@
   .status { font-size: 17px; margin-top: 4px; }
   .score-row { display: flex; align-items: center; gap: 10px; }
   .status-pill { font-size: 18px; font-weight: 800; padding: 6px 16px; border-radius: 999px; line-height: 1; }
-  /* Tap-to-share (2026-09) is deliberately invisible -- no icon, no outline --
-     per Tod's call. cursor:pointer is the one hint, and only matters on
-     desktop since it has no effect on touch. */
-  .status-pill[data-share] { cursor: pointer; }
+  /* Tap-to-share (2026-09) was deliberately invisible at first -- no icon, no
+     outline, cursor:pointer the only hint (useless on touch, where this
+     mostly gets used). 2026-11 (Tod's call): added a tiny, faint Android-style
+     share glyph (three connected nodes) inline after the status word, so
+     there's finally SOME affordance on a phone -- still small/low-opacity
+     enough to be easy to miss unless you're looking, matching the deliberately
+     quiet treatment everywhere else on this card. */
+  .status-pill[data-share] {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-pill[data-share]::after {
+    content: "";
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE4IDE2LjA4Yy0uNzYgMC0xLjQ0LjMtMS45Ni43N0w4LjkxIDEyLjdjLjA1LS4yMy4wOS0uNDYuMDktLjdzLS4wNC0uNDctLjA5LS43bDcuMDUtNC4xMWMuNTQuNSAxLjI1LjgxIDIuMDQuODEgMS42NiAwIDMtMS4zNCAzLTNzLTEuMzQtMy0zLTMtMyAxLjM0LTMgM2MwIC4yNC4wNC40Ny4wOS43TDguMDQgOS44MUM3LjUgOS4zMSA2Ljc5IDkgNiA5Yy0xLjY2IDAtMyAxLjM0LTMgM3MxLjM0IDMgMyAzYy43OSAwIDEuNS0uMzEgMi4wNC0uODFsNy4xMiA0LjE2Yy0uMDUuMjEtLjA4LjQzLS4wOC42NSAwIDEuNjEgMS4zMSAyLjkyIDIuOTIgMi45MnMyLjkyLTEuMzEgMi45Mi0yLjkyLTEuMzEtMi45Mi0yLjkyLTIuOTJ6IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuNTUpIi8+PC9zdmc+");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
   .status-pill.GO { background: rgba(52, 211, 153, 0.16); color: #6ee7b7; }
   .status-pill.MAYBE { background: rgba(252, 211, 77, 0.16); color: #fcd34d; }
   .status-pill.NO-GO { background: rgba(248, 113, 113, 0.16); color: #fca5a5; }
