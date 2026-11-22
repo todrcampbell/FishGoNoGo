@@ -50,6 +50,12 @@
     background: none; border: none; color: #60a5fa; font-size: 14px;
     cursor: pointer; padding: 10px 0; margin: 2px 0 12px 0; text-align: left; display: block;
   }
+  /* Cache-all link (2026-11, Tod's call): the shared .link-button blue reads
+     right for "Plan a Crossing"/"Back to dashboard" where it's the only link
+     on screen, but here it sits directly above the muted Conditions/Tide/
+     Structure guide rows and looked out of place next to them. Muted gray
+     folds it into that same quiet-utility-text family instead. */
+  #cacheAllLink { color: #9ca3af; }
   .field-label { font-size: 12px; color: #9ca3af; margin: 14px 0 4px 0; display: block; }
   input[type="time"] {
     padding: 12px 14px; font-size: 16px; min-height: 48px;
@@ -471,6 +477,7 @@
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
   </div>
   <div id="loadStatus" style="text-align:center;font-size:12px;color:#9ca3af;margin:8px 0 0 0;"></div>
+  <button type="button" class="link-button" id="cacheAllLink">⬇ Cache all locations for offline use</button>
 
   <div class="kpi-summary">
     <!-- Collapsed dropdown (2026-09, Tod's call) -- reuses the same small
@@ -1058,6 +1065,111 @@ function clearLoadCountdown() {
   const el = document.getElementById("loadStatus");
   if (el) el.textContent = "";
 }
+
+// Offline/stale-data fallback (2026-11, Tod's call -- part 2 of the stall
+// fix): every successful live load caches that location's raw weather+
+// marine responses in localStorage, keyed per location, so a future failed
+// load (dead signal, or Open-Meteo having one of its rough patches) can
+// fall back to the last good data instead of a dead end. 7-day max age --
+// past that, cached data is treated as absent rather than shown as current.
+const CACHE_PREFIX = "fgng_cache_";
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function saveLocationCache(key, weather, marine) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+      savedAt: Date.now(),
+      weather,
+      marine
+    }));
+  } catch (e) {
+    // Storage full, unavailable, or a private window -- caching is a
+    // nice-to-have fallback, never something to block or warn about.
+  }
+}
+
+function loadLocationCache(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.savedAt || !parsed.weather || !parsed.marine) return null;
+    if (Date.now() - parsed.savedAt > CACHE_MAX_AGE_MS) return null; // too stale -- treat as absent
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function formatCacheAge(ms) {
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+// Manual "cache all locations for offline use" action (2026-11, Tod's call)
+// -- a deliberate action (e.g. before heading out with patchy reception),
+// never run automatically, so it can't add background load during one of
+// Open-Meteo's flaky patches unless Tod actually asks for it. Limited to 3
+// requests in flight at once rather than one giant Promise.all across every
+// location, so it doesn't fire 40+ simultaneous requests at an API that's
+// already sometimes struggling.
+async function cacheAllLocations() {
+  const linkEl = document.getElementById("cacheAllLink");
+  if (!linkEl || linkEl.disabled) return;
+  const keys = Object.keys(LOCATIONS);
+  const CONCURRENCY = 3;
+  let completed = 0, failed = 0;
+  linkEl.disabled = true;
+  linkEl.textContent = `⬇ Caching… (0/${keys.length})`;
+
+  async function cacheOne(key) {
+    const loc = LOCATIONS[key];
+    try {
+      const [weather, marine] = await Promise.all([
+        loadWeather(loc.lat, loc.lon),
+        fetchWithTimeout(
+          `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
+          `&hourly=wave_height,sea_level_height_msl&daily=wave_height_max` +
+          `&timezone=Australia%2FBrisbane&forecast_days=8`
+        ).then(r => r.json())
+      ]);
+      if (!weather?.hourly?.wind_speed_10m) throw new Error("no data");
+      saveLocationCache(key, weather, marine);
+    } catch (e) {
+      failed++;
+      console.warn("Cache all locations: failed for", key, e);
+    } finally {
+      completed++;
+      linkEl.textContent = `⬇ Caching… (${completed}/${keys.length})`;
+    }
+  }
+
+  const queue = keys.slice();
+  async function worker() {
+    while (queue.length) {
+      const key = queue.shift();
+      await cacheOne(key);
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+  linkEl.disabled = false;
+  const okCount = keys.length - failed;
+  linkEl.textContent = failed
+    ? `⬇ Cached ${okCount}/${keys.length} locations (${failed} couldn't load — tap to try again)`
+    : `⬇ Cached all ${keys.length} locations for offline use`;
+  if (!failed) {
+    setTimeout(() => {
+      if (linkEl) linkEl.textContent = "⬇ Cache all locations for offline use";
+    }, 5000);
+  }
+}
+
 // Latest fetched tide points, kept around so the Tide guide's
 // current-phase flag (2026-09) can compute "where am I now" against
 // whichever location is currently loaded, without a separate fetch.
@@ -2300,6 +2412,96 @@ function renderWeekChipGridHTML(dayResults) {
   return `<div class="chip-grid">${chips}</div>`;
 }
 
+/* Shared by the live-success path and the cached-data fallback in load()
+   below -- everything from "turn weather+marine into cards" through firing
+   the deferred Bite-times/Commentary lookups. Throws if weather data is
+   unusable, same as this code did inline before the split, so both callers
+   handle that failure the same way. */
+function renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote) {
+  const qldPoints = tidePointsFromMarine(marine);
+  lastQldPoints = qldPoints;
+
+  if (!qldPoints.length) {
+    gaugeNote.textContent += " (Tide data is currently unavailable — see the browser console for details.)";
+  }
+
+  if (!weather?.hourly?.wind_speed_10m) {
+    throw new Error("Missing weather data");
+  }
+
+  /* ========== TODAY + NEXT 7 DAYS, ONE UNIFIED SET ========== */
+  const dayResults = [];
+  for (let i = 0; i <= 7; i++) {
+    const date = weather.daily.time[i];
+    const r = computeDayScore(weather, marine, qldPoints, i);
+    r.scoringSentence = renderChecklist(r.checks);
+    dayResults.push({ i, date, r });
+  }
+
+  // "Best day this week" text summary removed 2026-09 (Tod's call) --
+  // redundant with the "Best day" badge and highlighted outline already
+  // drawn on that day's own card below (see the "best" badge/class
+  // applied via bestIdx further down). bestIdx itself stays -- it's still
+  // what drives that badge/outline.
+  const scored = dayResults.filter(x => x.r.status !== "NO-DATA");
+  let bestIdx = -1;
+  if (scored.length) {
+    bestIdx = scored.reduce((a, b) => (b.r.score > a.r.score ? b : a)).i;
+  }
+
+  // The generic "what's around this month" wildlife blurb that used to sit
+  // under this list was dropped 2026-09 (Tod's call) -- it duplicated the
+  // per-day calm-water wildlife note that already appears on individual
+  // day cards, and having both was redundant rather than additive.
+  let cardsHTML = `<div class="forecast-card" id="weekChipCard">
+    ${renderWeekChipGridHTML(dayResults)}
+  </div>`;
+
+  dayResults.forEach(({ i, date, r }) => {
+    const label = i === 0 ? "Today" : dayName(date);
+    const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}</h3>`;
+    const isBest = i === bestIdx;
+    // id lets a chip in the week grid above jump straight to this day's
+    // own card (see the delegated click listener below).
+    cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}" id="dayCard-${date}">
+      ${isBest ? '<span class="best-badge">Best day</span>' : ""}
+      ${renderCard(date, r, "", heading, name, label)}
+    </div>`;
+  });
+
+  document.getElementById("cardsGrid").innerHTML = cardsHTML;
+
+  // Bite times (solunar) and Commentary -- fired after the grid is already
+  // showing wind/tide/species info, not awaited before it, so CycleCalcs
+  // being slow or unreachable can never delay the info the app actually
+  // exists for. Each day patches in independently as its own lookup
+  // resolves. The loadId check discards a response that comes back after
+  // Tod has already switched to a different location. Commentary rides
+  // along on the same lookup as Bite times (2026-09, Tod's call) since it
+  // needs the same moon data for its "best Major window" line -- no sense
+  // firing a second CycleCalcs call per day just to split them.
+  dayResults.forEach(({ i, date, r }) => {
+    const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[i]);
+    const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[i]);
+    loadMoonTimes(lat, lon, date).then(moonData => {
+      if (loadId !== currentLoadId) return; // stale -- location changed since this was fired
+      const commentary = buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin);
+      const details = document.getElementById(`biteToggle-${date}`);
+      if (details) {
+        const summary = details.querySelector("summary");
+        const body = details.querySelector(".commentary");
+        if (summary) summary.textContent = `Bite times${commentary.count ? ` (${commentary.count})` : ""}`;
+        if (body) body.innerHTML = commentary.html;
+      }
+      const commentaryDetails = document.getElementById(`commentaryToggle-${date}`);
+      if (commentaryDetails) {
+        const body = commentaryDetails.querySelector(".commentary");
+        if (body) body.textContent = buildConditionsCommentary(r.checks, moonData, sunRiseMin, sunSetMin);
+      }
+    });
+  });
+}
+
 async function load() {
   const loadId = ++currentLoadId;
   const select = document.getElementById("locationSelect");
@@ -2342,93 +2544,37 @@ async function load() {
         `&timezone=Australia%2FBrisbane&forecast_days=8`
       ).then(r => r.json())
     ]);
-    const qldPoints = tidePointsFromMarine(marine);
-    lastQldPoints = qldPoints;
 
-    if (!qldPoints.length) {
-      gaugeNote.textContent += " (Tide data is currently unavailable — see the browser console for details.)";
-    }
-
-    if (!weather?.hourly?.wind_speed_10m) {
-      throw new Error("Missing weather data");
-    }
-
-    /* ========== TODAY + NEXT 7 DAYS, ONE UNIFIED SET ========== */
-    const dayResults = [];
-    for (let i = 0; i <= 7; i++) {
-      const date = weather.daily.time[i];
-      const r = computeDayScore(weather, marine, qldPoints, i);
-      r.scoringSentence = renderChecklist(r.checks);
-      dayResults.push({ i, date, r });
-    }
-
-    // "Best day this week" text summary removed 2026-09 (Tod's call) --
-    // redundant with the "Best day" badge and highlighted outline already
-    // drawn on that day's own card below (see the "best" badge/class
-    // applied via bestIdx further down). bestIdx itself stays -- it's still
-    // what drives that badge/outline.
-    const scored = dayResults.filter(x => x.r.status !== "NO-DATA");
-    let bestIdx = -1;
-    if (scored.length) {
-      bestIdx = scored.reduce((a, b) => (b.r.score > a.r.score ? b : a)).i;
-    }
-
-    // The generic "what's around this month" wildlife blurb that used to sit
-    // under this list was dropped 2026-09 (Tod's call) -- it duplicated the
-    // per-day calm-water wildlife note that already appears on individual
-    // day cards, and having both was redundant rather than additive.
-    let cardsHTML = `<div class="forecast-card" id="weekChipCard">
-      ${renderWeekChipGridHTML(dayResults)}
-    </div>`;
-
-    dayResults.forEach(({ i, date, r }) => {
-      const label = i === 0 ? "Today" : dayName(date);
-      const heading = `<h3 style="margin:12px 0 6px 0;font-size:1rem;">${label}</h3>`;
-      const isBest = i === bestIdx;
-      // id lets a chip in the week grid above jump straight to this day's
-      // own card (see the delegated click listener below).
-      cardsHTML += `<div class="forecast-card ${r.status}${isBest ? " best" : ""}${i === 0 ? " today-card" : ""}" id="dayCard-${date}">
-        ${isBest ? '<span class="best-badge">Best day</span>' : ""}
-        ${renderCard(date, r, "", heading, name, label)}
-      </div>`;
-    });
-
+    renderWeatherMarineInto(weather, marine, lat, lon, name, loadId, gaugeNote);
     clearLoadCountdown();
-    document.getElementById("cardsGrid").innerHTML = cardsHTML;
-
-    // Bite times (solunar) and Commentary -- fired after the grid is already
-    // showing wind/tide/species info, not awaited before it, so CycleCalcs
-    // being slow or unreachable can never delay the info the app actually
-    // exists for. Each day patches in independently as its own lookup
-    // resolves. The loadId check discards a response that comes back after
-    // Tod has already switched to a different location. Commentary rides
-    // along on the same lookup as Bite times (2026-09, Tod's call) since it
-    // needs the same moon data for its "best Major window" line -- no sense
-    // firing a second CycleCalcs call per day just to split them.
-    dayResults.forEach(({ i, date, r }) => {
-      const sunRiseMin = timeToMinutes(weather?.daily?.sunrise?.[i]);
-      const sunSetMin = timeToMinutes(weather?.daily?.sunset?.[i]);
-      loadMoonTimes(lat, lon, date).then(moonData => {
-        if (loadId !== currentLoadId) return; // stale -- location changed since this was fired
-        const commentary = buildBiteTimesHTML(moonData, sunRiseMin, sunSetMin);
-        const details = document.getElementById(`biteToggle-${date}`);
-        if (details) {
-          const summary = details.querySelector("summary");
-          const body = details.querySelector(".commentary");
-          if (summary) summary.textContent = `Bite times${commentary.count ? ` (${commentary.count})` : ""}`;
-          if (body) body.innerHTML = commentary.html;
-        }
-        const commentaryDetails = document.getElementById(`commentaryToggle-${date}`);
-        if (commentaryDetails) {
-          const body = commentaryDetails.querySelector(".commentary");
-          if (body) body.textContent = buildConditionsCommentary(r.checks, moonData, sunRiseMin, sunSetMin);
-        }
-      });
-    });
+    saveLocationCache(key, weather, marine);
 
   } catch (e) {
     clearLoadCountdown();
     console.error(e);
+
+    // Stall protection, part 2 (2026-11, Tod's call): if the live fetch
+    // failed or timed out, fall back to the last successfully cached data
+    // for this exact location instead of going straight to a dead end.
+    // Written on every successful live load above, and separately by the
+    // "cache all locations" action -- see saveLocationCache/
+    // loadLocationCache and cacheAllLocations().
+    const cached = loadLocationCache(key);
+    if (cached) {
+      try {
+        renderWeatherMarineInto(cached.weather, cached.marine, lat, lon, name, loadId, gaugeNote);
+        loadStatusEl.innerHTML =
+          `Couldn't refresh — showing cached data from ${formatCacheAge(Date.now() - cached.savedAt)}. ` +
+          `<button type="button" class="link-button" id="retryLoadBtn" style="display:inline;padding:0;margin:0;">Retry</button>`;
+        const retryBtn = document.getElementById("retryLoadBtn");
+        if (retryBtn) retryBtn.addEventListener("click", load);
+        return;
+      } catch (cacheErr) {
+        console.error("Cached data also failed to render", cacheErr);
+        // fall through to the normal error UI below
+      }
+    }
+
     const isTimeout = /timed out/i.test(e?.message || "");
     document.getElementById("cardsGrid").innerHTML =
       `<div class="card">${isTimeout
@@ -2569,6 +2715,7 @@ document.getElementById("locationSearchInput").addEventListener("keydown", (e) =
   if (e.key === "Enter") { e.preventDefault(); searchLocation(); }
 });
 document.getElementById("locationSelect").addEventListener("change", load);
+document.getElementById("cacheAllLink").addEventListener("click", cacheAllLocations);
 document.getElementById("rainPrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(RAIN_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
   updatePreferencesSummary();
