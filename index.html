@@ -35,7 +35,8 @@
   select:active { background: #26313f; }
   select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
   /* Smaller text just for the location list (2026-09, Tod's call) -- it's
-     grown to 21 options across 6 groups, so a smaller font fits more of
+     grown to 35 options across 9 groups (2026-11: added Redlands Coast/
+     Southern Islands/Stradbroke Island), so a smaller font fits more of
      each label without wrapping. Scoped to this one select rather than the
      shared `select` rule above, so Plan a Crossing's day picker is unaffected. */
   #locationSelect { font-size: 14px; }
@@ -501,6 +502,24 @@
       <option value="coffeepots">The Coffee Pots</option>
       <option value="fourbeacons">The Four Beacons</option>
       <option value="comboyuro">Comboyuro Beacons</option>
+    </optgroup>
+    <optgroup label="Redlands Coast">
+      <option value="cleveland">Cleveland Point</option>
+      <option value="wellington">Wellington Point</option>
+      <option value="victoria">Victoria Point</option>
+    </optgroup>
+    <optgroup label="Southern Islands">
+      <option value="coochiemudlo">Coochiemudlo Island</option>
+      <option value="russell">Russell Island</option>
+      <option value="macleay">Macleay Island</option>
+      <option value="lamb">Lamb Island</option>
+      <option value="karragarra">Karragarra Island</option>
+      <option value="peel">Peel Island</option>
+    </optgroup>
+    <optgroup label="Stradbroke Island">
+      <option value="dunwich">Dunwich</option>
+      <option value="amity">Amity Point</option>
+      <option value="lookout">Point Lookout</option>
     </optgroup>
   </select>
   <div class="gauge-note" id="gaugeNote"></div>
@@ -1058,7 +1077,26 @@ const LOCATIONS = {
   // Reefs. Ordered by distance ascending.
   coffeepots:    { lat: -27.3033, lon: 153.2417, name: "The Coffee Pots", group: "Beacons", note: "Navigation beacon, holds bait and structure." },
   fourbeacons:   { lat: -27.2333, lon: 153.3333, name: "The Four Beacons", group: "Beacons", note: "Navigation beacon, holds bait and structure." }, // updated 2026-09, Tod's call
-  comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons", group: "Beacons", note: "Navigation beacon, holds bait and structure." }
+  comboyuro:     { lat: -27.0533, lon: 153.3750, name: "Comboyuro Beacons", group: "Beacons", note: "Navigation beacon, holds bait and structure." },
+  // Redlands Coast / Southern Islands / Stradbroke Island (2026-11, Tod's
+  // call: "extend the preset locations to southern moreton bay and Redland
+  // bay") -- three groups rather than one, split by Tod's own call after
+  // reviewing a combined proposal. Coordinates researched and sourced from
+  // Wikipedia infoboxes/Google Maps listings, not Tod-confirmed GPS marks
+  // like some of the original presets -- good for a preset pin, but worth
+  // his own correction if any of these land somewhere he wouldn't expect.
+  cleveland:     { lat: -27.5097, lon: 153.2888, name: "Cleveland Point", group: "Redlands Coast", note: "Historic lighthouse point, shore-fishing and boat-ramp spot." },
+  wellington:    { lat: -27.4980, lon: 153.2358, name: "Wellington Point", group: "Redlands Coast", note: "Tidal peninsula with jetty and boat ramp." },
+  victoria:      { lat: -27.5891, lon: 153.2888, name: "Victoria Point", group: "Redlands Coast", note: "Redlands coast point, gateway to Coochiemudlo Island." },
+  coochiemudlo:  { lat: -27.5725, lon: 153.3302, name: "Coochiemudlo Island", group: "Southern Islands", note: "Small island off Victoria Point." },
+  russell:       { lat: -27.6730, lon: 153.3847, name: "Russell Island", group: "Southern Islands", note: "Largest of the Southern Moreton Bay Islands." },
+  macleay:       { lat: -27.6105, lon: 153.3552, name: "Macleay Island", group: "Southern Islands", note: "Southern Moreton Bay Island with jetty and ferry terminal." },
+  lamb:          { lat: -27.6261, lon: 153.3796, name: "Lamb Island", group: "Southern Islands", note: "Small, quiet Southern Moreton Bay Island." },
+  karragarra:    { lat: -27.6375, lon: 153.3727, name: "Karragarra Island", group: "Southern Islands", note: "Smallest inhabited Southern Moreton Bay Island." },
+  peel:          { lat: -27.4980, lon: 153.3538, name: "Peel Island", group: "Southern Islands", note: "Uninhabited national park island, popular anchorage." },
+  dunwich:       { lat: -27.4992, lon: 153.4024, name: "Dunwich", group: "Stradbroke Island", note: "Main ferry terminal and township, bay side of the island." },
+  amity:         { lat: -27.3952, lon: 153.4411, name: "Amity Point", group: "Stradbroke Island", note: "Northern-tip township facing the bay, popular for fishing." },
+  lookout:       { lat: -27.4297, lon: 153.5400, name: "Point Lookout", group: "Stradbroke Island", note: "Ocean-side township near Main Beach and Cylinder Beach." }
 };
 
 /* group/note added 2026-09 for the Plan a Crossing upgrade below -- group
@@ -1070,7 +1108,7 @@ const LOCATIONS = {
    dropdowns. note is a short, deliberately generic structure descriptor
    (by location type/group, not researched per-spot intel) used in the new
    "En route" list and the generated trip prompt -- see findEnRouteStops(). */
-const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons"];
+const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons", "Redlands Coast", "Southern Islands", "Stradbroke Island"];
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
 
@@ -2870,6 +2908,24 @@ function updatePreferencesSummary() {
 }
 updatePreferencesSummary();
 
+// GPS coordinates (2026-11, Tod's call: "could we do it by GPS
+// coordinates" -- copying straight out of Google Maps, which gives decimal
+// degrees as "lat, lon", e.g. "-27.470567, 153.026000"). Checked before any
+// geocoding call in both searchLocation() and geocodePlace() below, so a
+// coordinate pair never touches Open-Meteo's name database at all -- no
+// lookup to get wrong, no country filter needed, just used directly and
+// labeled with the coordinates themselves (Tod's call: name it that way
+// rather than reverse-geocoding it back to a place name).
+function parseCoordinates(query) {
+  const m = query.trim().match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lon = parseFloat(m[2]);
+  if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  return { lat, lon, name: `${lat}, ${lon}` };
+}
+
 async function searchLocation() {
   const input = document.getElementById("locationSearchInput");
   const status = document.getElementById("searchStatus");
@@ -2877,12 +2933,28 @@ async function searchLocation() {
   if (!query) return;
 
   status.textContent = "Searching…";
+
+  const coords = parseCoordinates(query);
+  if (coords) {
+    LOCATIONS.custom = coords;
+    addOrSelectCustomOption(document.getElementById("locationSelect"), coords);
+    status.textContent = "";
+    load();
+    return;
+  }
+
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+    // countryCode=AU (2026-11, Tod's call: "limit results to Australia" --
+    // the search box was returning same-named places overseas, e.g. a
+    // "Brisbane" in the US turning up ahead of the real one) -- filtered
+    // server-side, before count is applied, per Open-Meteo's own geocoding
+    // docs, so this doesn't just drop a non-AU top match and leave count=1
+    // with nothing: it finds the best AU match directly.
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json&countryCode=AU`;
     const data = await (await fetch(url)).json();
     const match = data?.results?.[0];
     if (!match) {
-      status.textContent = `No place found for "${query}".`;
+      status.textContent = `No place found in Australia for "${query}".`;
       return;
     }
     const label = [match.name, match.admin1, match.country].filter(Boolean).join(", ");
@@ -3112,7 +3184,16 @@ function updateEnRouteDisplay() {
 }
 
 async function geocodePlace(query) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+  // GPS coordinates -- see parseCoordinates above; same fix as
+  // searchLocation(), reused here since Plan a Crossing's two place
+  // searches both route through this function.
+  const coords = parseCoordinates(query);
+  if (coords) return coords;
+
+  // countryCode=AU -- same fix as searchLocation() above, same reason
+  // (Plan a Crossing's "leave from"/destination search had the identical
+  // overseas-match problem).
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json&countryCode=AU`;
   const data = await (await fetch(url)).json();
   const match = data?.results?.[0];
   if (!match) return null;
