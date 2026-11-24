@@ -35,8 +35,9 @@
   select:active { background: #26313f; }
   select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
   /* Smaller text just for the location list (2026-09, Tod's call) -- it's
-     grown to 35 options across 9 groups (2026-11: added Redlands Coast/
-     Southern Islands/Stradbroke Island), so a smaller font fits more of
+     grown to 43 options across 11 groups (2026-11: added Redlands Coast/
+     Southern Islands/Stradbroke Island/Southern Rivers/Sunshine Coast), so
+     a smaller font fits more of
      each label without wrapping. Scoped to this one select rather than the
      shared `select` rule above, so Plan a Crossing's day picker is unaffected. */
   #locationSelect { font-size: 14px; }
@@ -520,6 +521,18 @@
       <option value="dunwich">Dunwich</option>
       <option value="amity">Amity Point</option>
       <option value="lookout">Point Lookout</option>
+    </optgroup>
+    <optgroup label="Southern Rivers">
+      <option value="tweed">Tweed River</option>
+      <option value="logan">Logan River</option>
+      <option value="albert">Albert River</option>
+      <option value="coomera">Coomera River</option>
+    </optgroup>
+    <optgroup label="Sunshine Coast">
+      <option value="noosa">Noosa River</option>
+      <option value="maroochy">Maroochy River</option>
+      <option value="mooloolaba">Mooloolaba River</option>
+      <option value="caloundrabar">Caloundra Bar</option>
     </optgroup>
   </select>
   <div class="gauge-note" id="gaugeNote"></div>
@@ -1096,7 +1109,28 @@ const LOCATIONS = {
   peel:          { lat: -27.4980, lon: 153.3538, name: "Peel Island", group: "Southern Islands", note: "Uninhabited national park island, popular anchorage." },
   dunwich:       { lat: -27.4992, lon: 153.4024, name: "Dunwich", group: "Stradbroke Island", note: "Main ferry terminal and township, bay side of the island." },
   amity:         { lat: -27.3952, lon: 153.4411, name: "Amity Point", group: "Stradbroke Island", note: "Northern-tip township facing the bay, popular for fishing." },
-  lookout:       { lat: -27.4297, lon: 153.5400, name: "Point Lookout", group: "Stradbroke Island", note: "Ocean-side township near Main Beach and Cylinder Beach." }
+  lookout:       { lat: -27.4297, lon: 153.5400, name: "Point Lookout", group: "Stradbroke Island", note: "Ocean-side township near Main Beach and Cylinder Beach." },
+  // Southern Rivers (2026-11, Tod's call: "add tweed. river to list. add
+  // noosa and maroochy, maloolaba rivers" -- then split into Southern
+  // Rivers/Sunshine Coast by river mouth location). Tweed is NSW/QLD
+  // border; Logan/Albert open into southern Moreton Bay; Coomera opens
+  // into the Gold Coast Broadwater, a distinct water body just south of
+  // the Moreton Bay Marine Park boundary -- grouped here with the other
+  // three rather than Sunshine Coast since geographically/by trip it's the
+  // same southward stretch. Coordinates researched, not Tod-confirmed.
+  tweed:         { lat: -28.1694, lon: 153.5564, name: "Tweed River", group: "Southern Rivers", note: "River mouth at the Point Danger/Tweed Heads breakwall." },
+  logan:         { lat: -27.7861, lon: 153.3613, name: "Logan River", group: "Southern Rivers", note: "River mouth at the Jacobs Well boat ramp." },
+  albert:        { lat: -27.7344, lon: 153.3580, name: "Albert River", group: "Southern Rivers", note: "River mouth at the Steiglitz boat ramp." },
+  coomera:       { lat: -27.8802, lon: 153.3963, name: "Coomera River", group: "Southern Rivers", note: "River mouth at Paradise Point, opens into the Gold Coast Broadwater, not Moreton Bay itself." },
+  // Sunshine Coast (2026-11, Tod's call). Maroochy's coordinate is a
+  // triangulated estimate (no single authoritative mouth source found) and
+  // Caloundra Bar's comes from a surf/kite-spot listing rather than an
+  // official chart -- both flagged to Tod as lower-confidence than the
+  // others, worth his own correction if either lands somewhere unexpected.
+  noosa:         { lat: -26.3850, lon: 153.0758, name: "Noosa River", group: "Sunshine Coast", note: "River mouth at Noosa Heads." },
+  maroochy:      { lat: -26.654,  lon: 153.106,  name: "Maroochy River", group: "Sunshine Coast", note: "River mouth near Cotton Tree/Maroochydore." },
+  mooloolaba:    { lat: -26.6811, lon: 153.1344, name: "Mooloolaba River", group: "Sunshine Coast", note: "River mouth at the Mooloolaba Spit." },
+  caloundrabar:  { lat: -26.8118, lon: 153.1323, name: "Caloundra Bar", group: "Sunshine Coast", note: "Ocean entrance bar at the northern end of Pumicestone Passage." }
 };
 
 /* group/note added 2026-09 for the Plan a Crossing upgrade below -- group
@@ -1108,7 +1142,7 @@ const LOCATIONS = {
    dropdowns. note is a short, deliberately generic structure descriptor
    (by location type/group, not researched per-spot intel) used in the new
    "En route" list and the generated trip prompt -- see findEnRouteStops(). */
-const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons", "Redlands Coast", "Southern Islands", "Stradbroke Island"];
+const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons", "Redlands Coast", "Southern Islands", "Stradbroke Island", "Southern Rivers", "Sunshine Coast"];
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
 
