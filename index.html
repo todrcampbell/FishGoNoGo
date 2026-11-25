@@ -42,6 +42,74 @@
      shared `select` rule above, so Plan a Crossing's day picker is unaffected. */
   #locationSelect { font-size: 14px; }
   .gauge-note { font-size: 0.78rem; color: #9ca3af; margin: 0 0 16px 0; max-width: 420px; }
+  /* GPS-coordinate hint under the Planner search box (2026-11, Tod's call).
+     Compound selector (.gauge-note.coord-hint) so this beats the
+     @media(min-width:900px) rule below that centers .gauge-note on wider
+     screens -- Tod's call was to keep this one left-aligned under the
+     search box at every width, not centered with the rest of the section. */
+  .gauge-note.coord-hint { text-align: left; margin: 0 auto 10px 0; }
+  .coord-hint-example {
+    background: none; border: none; padding: 0; font: inherit;
+    color: #60a5fa; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+  }
+  .coord-hint-example:active { opacity: 0.7; }
+  /* Planner search box (2026-11, Tod's call) -- left-aligned at every
+     width, unlike Plan a Crossing's two location search rows which stay
+     centered on wide screens. ID selector so this wins over the
+     @media(min-width:900px) rule below regardless of source order. */
+  #locationSearchRow { margin-left: 0; margin-right: auto; }
+  /* Best Spots This Week (2026-11, Tod's call) -- same card language as
+     .enroute-item (#1f2937 fill, #374151 border) since both are "scan
+     results in a list" UI, but each row is a <button> here since tapping
+     one jumps to that location on the dashboard. */
+  .best-spot-list { display: flex; flex-direction: column; gap: 8px; max-width: 420px; margin-top: 12px; }
+  .best-spot-item {
+    background: #1f2937; border: 1px solid #374151; border-radius: 10px;
+    padding: 10px 12px; display: flex; gap: 12px; align-items: center;
+    width: 100%; min-height: 48px; cursor: pointer; text-align: left;
+    font: inherit; color: #eee;
+  }
+  .best-spot-item:active { background: #26313f; }
+  .best-spot-rank {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+    background: #111827; border: 1px solid #374151; color: #9ca3af;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .best-spot-info { flex: 1; min-width: 0; }
+  .best-spot-name { font-weight: 700; font-size: 14px; display: block; }
+  .best-spot-meta { font-size: 12.5px; color: #9ca3af; margin-top: 2px; }
+  .best-spot-item .status-pill { font-size: 13px; padding: 4px 10px; flex-shrink: 0; }
+  /* Refresh icon (2026-11, Tod's call) -- icon-only, same fill/border
+     language as #locationSearchBtn. Spins while a scan is running so
+     tapping it gives visible feedback instead of a silent no-op-looking
+     wait, which was the actual complaint (the automatic background
+     rescan has no visible cue of its own). */
+  .icon-btn {
+    width: 40px; height: 40px; flex-shrink: 0; font-size: 19px; line-height: 1;
+    background: #1f2937; color: #eee; border-radius: 10px; border: 1px solid #374151;
+    cursor: pointer;
+  }
+  .icon-btn:active { background: #26313f; }
+  .icon-btn:disabled { opacity: 0.5; cursor: default; }
+  .icon-btn.spinning { animation: icon-btn-spin 0.8s linear infinite; }
+  @keyframes icon-btn-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  /* Share icon (2026-11, Tod's call) -- same share glyph already used on
+     the per-day status-pill's ::after (see "Share" section further down),
+     just centered as this button's whole icon instead of a corner
+     accent, so the two share affordances read as the same feature. */
+  .share-icon-btn {
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE4IDE2LjA4Yy0uNzYgMC0xLjQ0LjMtMS45Ni43N0w4LjkxIDEyLjdjLjA1LS4yMy4wOS0uNDYuMDktLjdzLS4wNC0uNDctLjA5LS43bDcuMDUtNC4xMWMuNTQuNSAxLjI1LjgxIDIuMDQuODEgMS42NiAwIDMtMS4zNCAzLTNzLTEuMzQtMy0zLTMtMyAxLjM0LTMgM2MwIC4yNC4wNC40Ny4wOS43TDguMDQgOS44MUM3LjUgOS4zMSA2Ljc5IDkgNiA5Yy0xLjY2IDAtMyAxLjM0LTMgM3MxLjM0IDMgMyAzYy43OSAwIDEuNS0uMzEgMi4wNC0uODFsNy4xMiA0LjE2Yy0uMDUuMjEtLjA4LjQzLS4wOC42NSAwIDEuNjEgMS4zMSAyLjkyIDIuOTIgMi45MnMyLjkyLTEuMzEgMi45Mi0yLjkyLTEuMzEtMi45Mi0yLjkyLTIuOTJ6IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuNzUpIi8+PC9zdmc+");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  /* Brief checkmark feedback on a desktop clipboard-copy (no Web Share API) --
+     same moment the per-day pill flashes "Copied!" in its own text, but this
+     button is icon-only, so the icon itself swaps for a checkmark glyph via
+     textContent instead (see shareBestSpots()). */
+  .share-icon-btn.copied { background-image: none; color: #6ee7b7; }
   .app-footer { font-size: 0.72rem; color: #6b7280; margin-top: 28px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.5; }
   .pref-toggle {
     display: flex; align-items: center; gap: 8px; font-size: 14px; color: #d1d5db;
@@ -373,6 +441,18 @@
   .kpi-item { font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
   .info { margin-top: 10px; font-size: 0.85rem; color: #9ca3af; }
   .swipe-hint { font-size: 0.8rem; color: #9ca3af; margin: -4px 0 8px 0; }
+  /* Best Spots link folded into the swipe-hint line (2026-11, Tod's call).
+     #bestSpotsLinkWide is the ≥900px-only variant, hidden by default and
+     shown by the @media(min-width:900px) block below; .swipe-hint-narrow
+     covers both the "Swipe for more..." text AND the narrow-width link,
+     so one media rule there hides/shows all three narrow-only pieces
+     together. */
+  .best-spots-trigger {
+    background: none; border: none; padding: 0; font: inherit;
+    color: #60a5fa; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .best-spots-trigger:active { opacity: 0.7; }
+  .swipe-hint-wide { display: none; }
   .skeleton-card {
     width: 100%; max-width: 340px; height: 220px; border-radius: 14px;
     background: linear-gradient(90deg, #1f2937 25%, #29354a 37%, #1f2937 63%);
@@ -397,7 +477,13 @@
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       max-width: 920px; margin: 0 auto;
     }
-    .swipe-hint { display: none; }
+    /* The .swipe-hint LINE itself stays visible at this width (it now
+       carries the Best Spots link too) -- only the swipe-specific wording
+       inside it hides, since there's nothing to swipe for once the
+       forecast is a side-by-side grid. See .swipe-hint-narrow/-wide
+       below. */
+    .swipe-hint-narrow { display: none; }
+    .swipe-hint-wide { display: inline; }
     .kpi-summary { max-width: 760px; margin-left: auto; margin-right: auto; text-align: left; }
     /* Without width:100% here, .link-button sits centered at whatever width .main
        allows — and for the <button> one (Plan a Crossing), it shrinks to its own text
@@ -536,8 +622,18 @@
     </optgroup>
   </select>
   <div class="gauge-note" id="gaugeNote"></div>
-
-  <div class="swipe-hint">Swipe sideways to see more days →</div>
+  <!-- Best Spots This Week link (2026-11, Tod's call) -- folded into the
+       swipe-hint line instead of its own line, so the dropdown area gains
+       one line, not two. The "swipe for more" clause only means anything
+       on a narrow screen (.swipe-hint-narrow/#bestSpotsLinkNarrow) --
+       widescreen already shows every day side by side, so there's
+       nothing to swipe for, and #bestSpotsLinkWide shows alone there
+       instead. Both link elements fire the same openBestSpotsView() via
+       the shared .best-spots-trigger class (see the listener below) since
+       they can't share one id. -->
+  <div class="swipe-hint">
+    <span class="swipe-hint-narrow">Swipe for more of this location or </span><button type="button" id="bestSpotsLinkNarrow" class="best-spots-trigger swipe-hint-narrow">see top locations this week</button><span class="swipe-hint-narrow">.</span><button type="button" id="bestSpotsLinkWide" class="best-spots-trigger swipe-hint-wide">See top locations this week →</button>
+  </div>
   <div class="forecast-row" id="cardsGrid">
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
   </div>
@@ -963,13 +1059,14 @@
       </label>
     </details>
 
-    <!-- Locations (2026-09, Tod's call) -- consolidates every location-
-         related tool into the one dropdown that used to just be "Search a
-         place": the search box, Plan a Crossing (moved out of Preferences,
-         where it never really belonged), and the Fishing Spots Map link
-         (moved out of Preferences too). Tod's reasoning, and the reason
-         this isn't added complexity: this replaces the "Search a place"
-         slot rather than sitting alongside it, so the page ends up with one
+    <!-- Planner (2026-09, Tod's call; renamed from "Locations" 2026-11) --
+         consolidates every location-related tool into the one dropdown that
+         used to just be "Search a place": the search box, Plan a Crossing
+         (moved out of Preferences, where it never really belonged), and the
+         Fishing Spots Map link (moved out of Preferences too). Tod's
+         reasoning, and the reason this isn't added complexity: this
+         replaces the "Search a place" slot rather than sitting alongside
+         it, so the page ends up with one
          fewer dropdown to scan, not one more, and Preferences goes back to
          being just the two toggles its name actually promises. Same
          #locationSearchInput/#locationSearchBtn/#searchStatus/
@@ -979,11 +1076,14 @@
          listeners) needed to change -- only where these elements live in
          the page moved, same pattern as the original Search a place move. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Locations</summary>
+      <summary>Planner</summary>
       <div class="commentary">
-        <div class="search-row" style="margin-top:8px;">
+        <div class="search-row" id="locationSearchRow" style="margin-top:8px;">
           <input type="text" id="locationSearchInput" placeholder="Search a place">
           <button id="locationSearchBtn" type="button" aria-label="Search">→</button>
+        </div>
+        <div class="gauge-note coord-hint">Tip: you can also paste GPS coordinates, like
+          <button type="button" id="coordHintExample" class="coord-hint-example">-27.1630, 153.3684</button>
         </div>
         <div class="gauge-note" id="searchStatus"></div>
       </div>
@@ -1035,6 +1135,37 @@
 
     <div id="crossingResult" style="margin-top:16px;"></div>
     <div id="tripPromptResult" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- Best Spots This Week (2026-11, Tod's call) -- scans every preset
+       location for its single best day in the next 7 days, same
+       CONCURRENCY=3 queue/worker pattern as cacheAllLocations() below (see
+       scanBestSpots()), and shows the top 10 ranked by score. Opening this
+       screen always kicks off a fresh scan automatically -- but last
+       time's results are shown immediately from localStorage while that
+       scan runs, so the screen is never blank just because a previous
+       visit already has an answer. The refresh icon (added 2026-11 after
+       Tod found the automatic background update too easy to miss -- no
+       visible change to watch for while it reruns) lets him force another
+       scan on demand and see it happen, via the same scanBestSpots()
+       re-entrancy-guarded by scanningBestSpots below so a manual tap
+       while the automatic one is still running doesn't start two at
+       once. Tapping a result jumps straight to that location on the
+       dashboard, same pattern as picking it from locationSelect. -->
+  <div id="bestSpotsView" style="display:none;">
+    <button id="backToDashboardFromBestSpotsBtn" type="button" class="link-button">← Back to dashboard</button>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:28px 0 10px 0;">
+      <h2 class="section-title" style="margin:0;">Best Spots This Week</h2>
+      <div style="display:flex; gap:8px; flex-shrink:0;">
+        <button id="bestSpotsShareBtn" type="button" aria-label="Share" class="icon-btn share-icon-btn"></button>
+        <button id="bestSpotsRefreshBtn" type="button" aria-label="Refresh" class="icon-btn">⟳</button>
+      </div>
+    </div>
+    <div class="gauge-note">Scans every saved location for its single best day in the next 7 days, ranked highest score first.</div>
+
+    <div id="bestSpotsProgress" class="gauge-note" style="display:none;"></div>
+    <div id="bestSpotsResults" class="best-spot-list"></div>
+    <div id="bestSpotsEmpty" class="gauge-note" style="display:none;">Couldn't score any locations just now — check your connection and reopen this screen to try again.</div>
   </div>
 
   <div class="app-footer">© 2026 Tod Campbell. All rights reserved — design and scoring logic are original work.</div>
@@ -1273,6 +1404,218 @@ async function cacheAllLocations() {
       if (linkEl) linkEl.textContent = "⬇ Cache all locations for offline use";
     }, 5000);
   }
+}
+
+// Best Spots This Week (2026-11, Tod's call) -- persisted so the screen
+// never looks blank on a repeat visit (see openBestSpotsView()), keyed
+// separately from CACHE_PREFIX's per-location raw-data cache since this
+// stores the already-ranked top 10, not raw weather/marine. Stores the
+// actual ISO date for each result's best day, not a relative label like
+// "Tomorrow" -- bestSpotDayLabel() below works out "Today"/weekday fresh
+// at render time, so a result shown stale (before its automatic rescan
+// finishes, or if that rescan fails) can't end up mislabelled once the
+// calendar date has moved on since it was scanned.
+const BEST_SPOTS_KEY = "fishGoNoGo.bestSpotsThisWeek";
+
+function loadBestSpotsCache() {
+  try {
+    const raw = localStorage.getItem(BEST_SPOTS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.results)) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveBestSpotsCache(results) {
+  try {
+    localStorage.setItem(BEST_SPOTS_KEY, JSON.stringify({ scannedAt: Date.now(), results }));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
+// "Today"/"Wed 2 Dec" rather than dayName()'s bare weekday -- a persisted
+// result can be more than a week old by the time it's shown (see comment
+// above), where a bare weekday is ambiguous about which week it meant.
+function bestSpotDayLabel(dateStr) {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  if (dateStr.slice(0, 10) === todayStr) return "Today";
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  return dt.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+}
+
+// Tracks exactly what's currently rendered in the list, so Share (see
+// buildBestSpotsShareText()/shareBestSpots() below) always sends exactly
+// what's on screen -- whichever count that happens to be -- rather than
+// re-deriving it from localStorage, which could be a half-step out of
+// sync with the DOM mid-rescan.
+let lastBestSpotsResults = [];
+
+function renderBestSpotsResults(results) {
+  lastBestSpotsResults = results || [];
+  const list = document.getElementById("bestSpotsResults");
+  const empty = document.getElementById("bestSpotsEmpty");
+  if (!results || !results.length) {
+    list.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  list.innerHTML = results.map((r, idx) => `
+    <button type="button" class="best-spot-item" data-key="${r.key}">
+      <span class="best-spot-rank">${idx + 1}</span>
+      <span class="best-spot-info">
+        <span class="best-spot-name">${r.name}</span>
+        <span class="best-spot-meta">${r.group} · ${bestSpotDayLabel(r.date)} · ${r.score}%</span>
+      </span>
+      <span class="status-pill ${r.status}">${r.status}</span>
+    </button>
+  `).join("");
+}
+
+// Mirrors buildShareText()/shareCard() (see the per-day Share section
+// further down) -- same lean voice and the same plain home link, just
+// listing every currently-shown result instead of one day's detail.
+function buildBestSpotsShareText() {
+  const lines = ["FishGoNoGo — Best Spots This Week", ""];
+  lastBestSpotsResults.forEach((r, idx) => {
+    lines.push(`${idx + 1}. ${r.name} — ${bestSpotDayLabel(r.date)} · ${r.score}/100 ${r.status}`);
+  });
+  lines.push("", "https://todrcampbell.github.io/FishGoNoGo/");
+  return lines.join("\n");
+}
+
+async function shareBestSpots(btnEl) {
+  if (!lastBestSpotsResults.length) return; // nothing scored yet -- no-op
+  const text = buildBestSpotsShareText();
+  if (navigator.share) {
+    try { await navigator.share({ text }); }
+    catch (e) { /* user cancelled the share sheet -- not worth surfacing */ }
+    return;
+  }
+  // No Web Share API (most desktop browsers) -- copy to clipboard instead
+  // and briefly swap the icon for a checkmark, since this button (unlike
+  // the per-day pill) has no text of its own to flash "Copied!" onto.
+  try {
+    await navigator.clipboard.writeText(text);
+    btnEl.classList.add("copied");
+    btnEl.textContent = "✓";
+    setTimeout(() => { btnEl.classList.remove("copied"); btnEl.textContent = ""; }, 1200);
+  } catch (e) {
+    console.error("FishGoNoGo: Best Spots share/copy failed", e);
+  }
+}
+
+// Same CONCURRENCY=3 queue/worker shape as cacheAllLocations() above, and
+// the same two fetches per location -- deliberately not refactored to
+// share code with cacheAllLocations(), since that function's progress
+// text/disabled-state live on #cacheAllLink while this one has its own
+// #bestSpotsProgress element and top-5 ranking step; sharing a helper
+// would mean passing both through it for little real saving. Every
+// preset location is scanned EXCEPT "custom" (a one-off GPS/place search
+// someone typed in) -- Tod's call: that's not a saved spot, so ranking it
+// alongside the 43 presets wouldn't mean much.
+let scanningBestSpots = false;
+async function scanBestSpots() {
+  // Re-entrancy guard (2026-11, Tod's call) -- the refresh icon and the
+  // automatic on-open scan both call this; without this a manual tap
+  // while the automatic one is still running would start a second
+  // overlapping scan, each racing to overwrite the other's progress text
+  // and results.
+  if (scanningBestSpots) return;
+  scanningBestSpots = true;
+  const refreshBtn = document.getElementById("bestSpotsRefreshBtn");
+  if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.classList.add("spinning"); }
+
+  try {
+    const progress = document.getElementById("bestSpotsProgress");
+    const keys = Object.keys(LOCATIONS).filter(k => k !== "custom");
+    const CONCURRENCY = 3;
+    let completed = 0;
+    const found = [];
+    progress.style.display = "block";
+    progress.textContent = `Checking 0 of ${keys.length} locations…`;
+
+    async function scanOne(key) {
+      const loc = LOCATIONS[key];
+      try {
+        const [weather, marine] = await Promise.all([
+          loadWeather(loc.lat, loc.lon),
+          fetchWithTimeout(
+            `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
+            `&hourly=wave_height,sea_level_height_msl,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,wave_period&daily=wave_height_max` +
+            `&timezone=Australia%2FBrisbane&forecast_days=8`
+          ).then(r => r.json())
+        ]);
+        if (!weather?.hourly?.wind_speed_10m) throw new Error("no data");
+        saveLocationCache(key, weather, marine);
+
+        const qldPoints = tidePointsFromMarine(marine);
+        let best = null;
+        for (let i = 0; i <= 7; i++) {
+          const r = computeDayScore(weather, marine, qldPoints, i, loc.group);
+          if (r.status === "NO-DATA") continue;
+          if (!best || r.score > best.score) {
+            best = { date: weather.daily.time[i], score: r.score, status: r.status };
+          }
+        }
+        if (best) {
+          found.push({ key, name: loc.name, group: loc.group, date: best.date, score: best.score, status: best.status });
+        }
+      } catch (e) {
+        console.warn("Best Spots This Week: failed for", key, e);
+      } finally {
+        completed++;
+        progress.textContent = `Checking ${completed} of ${keys.length} locations…`;
+      }
+    }
+
+    const queue = keys.slice();
+    async function worker() {
+      while (queue.length) {
+        const key = queue.shift();
+        await scanOne(key);
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+    found.sort((a, b) => b.score - a.score);
+    const top10 = found.slice(0, 10);
+    progress.style.display = "none";
+    renderBestSpotsResults(top10);
+    saveBestSpotsCache(top10);
+  } finally {
+    scanningBestSpots = false;
+    if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.classList.remove("spinning"); }
+  }
+}
+
+// Showing last time's results immediately (if any) then always rescanning
+// in the background -- see the comment on #bestSpotsView in the markup
+// above for why, and for the refresh icon alongside it.
+function openBestSpotsView() {
+  document.getElementById("dashboardView").style.display = "none";
+  document.getElementById("crossingView").style.display = "none";
+  document.getElementById("bestSpotsView").style.display = "block";
+  const cached = loadBestSpotsCache();
+  if (cached && cached.results.length) {
+    renderBestSpotsResults(cached.results);
+  } else {
+    // Nothing saved yet (first visit ever) -- leave the list/empty-state
+    // alone rather than showing "couldn't score any locations" before a
+    // scan has even run once.
+    document.getElementById("bestSpotsResults").innerHTML = "";
+    document.getElementById("bestSpotsEmpty").style.display = "none";
+  }
+  scanBestSpots();
+}
+
+function closeBestSpotsView() {
+  document.getElementById("bestSpotsView").style.display = "none";
+  document.getElementById("dashboardView").style.display = "block";
 }
 
 // Latest fetched tide points, kept around so the Tide guide's
@@ -3074,6 +3417,11 @@ document.getElementById("locationSearchInput").addEventListener("keydown", (e) =
   if (e.key === "Enter") { e.preventDefault(); searchLocation(); }
 });
 document.getElementById("locationSelect").addEventListener("change", load);
+document.getElementById("coordHintExample").addEventListener("click", () => {
+  const input = document.getElementById("locationSearchInput");
+  input.value = "-27.1630, 153.3684";
+  input.focus();
+});
 document.getElementById("cacheAllLink").addEventListener("click", cacheAllLocations);
 document.getElementById("rainPrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(RAIN_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
@@ -3504,6 +3852,17 @@ document.getElementById("planCrossingLink").addEventListener("click", () => {
 document.getElementById("backToDashboardBtn").addEventListener("click", () => {
   document.getElementById("crossingView").style.display = "none";
   document.getElementById("dashboardView").style.display = "block";
+});
+document.querySelectorAll(".best-spots-trigger").forEach(el => el.addEventListener("click", openBestSpotsView));
+document.getElementById("backToDashboardFromBestSpotsBtn").addEventListener("click", closeBestSpotsView);
+document.getElementById("bestSpotsRefreshBtn").addEventListener("click", scanBestSpots);
+document.getElementById("bestSpotsShareBtn").addEventListener("click", (e) => shareBestSpots(e.currentTarget));
+document.getElementById("bestSpotsResults").addEventListener("click", (e) => {
+  const item = e.target.closest(".best-spot-item");
+  if (!item) return;
+  document.getElementById("locationSelect").value = item.dataset.key;
+  closeBestSpotsView();
+  load();
 });
 document.getElementById("crossFromSelect").addEventListener("change", (e) => {
   if (e.target.value !== "custom") {
