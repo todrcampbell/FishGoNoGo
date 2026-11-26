@@ -1109,16 +1109,22 @@
       <a id="fishingSpotsMapLink" class="link-button" href="https://www.google.com/maps/d/u/0/edit?mid=12hwQ5F8wFx_wqBUm34LYcr8SrZfiKlg&amp;usp=sharing" target="_blank" rel="noopener" style="margin-top:10px;">View Fishing Spots Map →</a>
     </details>
 
-    <!-- Install the App (2026-11, Tod's call) -- plain content, no logic.
-         Originally Android-only; extended to cover iPhone too after
-         confirming the existing manifest.json + icon-192.png/icon-512.png
-         are sufficient there as well (no extra apple-touch-icon tag added --
-         iOS falls back to the manifest icons since purpose:"any" is set).
-         Two subheadings inside one dropdown, reusing .sub-label the same
-         way "Bite times" holds "Species times" underneath it. -->
+    <!-- Install or Improve the App (2026-11, Tod's call) -- plain content,
+         no logic. Originally "Install the App" / Android-only; extended to
+         cover iPhone and Windows too (manifest.json + icon-192.png/
+         icon-512.png are sufficient for iOS as well -- no extra
+         apple-touch-icon tag needed, since iOS falls back to the manifest
+         icons when purpose:"any" is set). Renamed again and the feedback
+         mailto: link (dedicated fishgonogo@gmail.com address, not Tod's
+         personal one, since this is a public page) moved inside as the
+         first thing shown, ahead of the per-OS steps. Subheadings reuse
+         .sub-label the same way "Bite times" holds "Species times"
+         underneath it. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Install the App</summary>
+      <summary>Install or Improve the App</summary>
       <div class="commentary">
+        <div class="gauge-note" style="margin:0 0 12px 0;">Got an idea for this app, or found something off?<br><a href="mailto:fishgonogo@gmail.com?subject=FishGoNoGo%20suggestion" style="color:#60a5fa; text-decoration:underline; text-underline-offset:2px;">Suggest an Improvement</a>.</div>
+
         <div class="sub-label">On Android</div>
         <ol style="margin:0 0 10px 0; padding-left: 20px;">
           <li>Open this site in Chrome on your phone.</li>
@@ -1145,13 +1151,6 @@
         </ol>
       </div>
     </details>
-
-    <!-- Feedback link (2026-11, Tod's call) -- dedicated Gmail address
-         (fishgonogo@gmail.com), not Tod's personal one, since this is a
-         public page. Plain mailto: link, not a Gmail-specific compose URL,
-         so it works from whatever mail app/account the visitor already
-         has -- no Google sign-in required on their end. -->
-    <div class="gauge-note" style="margin-top:14px;">Got an idea for this app, or found something off? <a href="mailto:fishgonogo@gmail.com?subject=FishGoNoGo%20suggestion" style="color:#60a5fa; text-decoration:underline; text-underline-offset:2px;">Suggest an Improvement</a>.</div>
   </div>
   </div>
 
