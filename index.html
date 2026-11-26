@@ -135,21 +135,56 @@
      textContent instead (see shareBestSpots()). */
   .share-icon-btn.copied { background-image: none; color: #6ee7b7; }
   .app-footer { font-size: 0.72rem; color: #6b7280; margin-top: 28px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.5; }
-  .pref-toggle {
-    display: flex; align-items: center; gap: 8px; font-size: 14px; color: #d1d5db;
-    margin: 8px 0 0 0; cursor: pointer; min-height: 24px;
+  /* Preference pills (2026-11, Tod's call) -- replaces the old Preferences
+     dropdown + .pref-toggle checkbox rows. Moved out to sit directly under
+     the cards (Tod's call) since toggling these re-scores and re-renders
+     the cards right there via load() -- burying them in a collapsed
+     dropdown at the bottom of the page meant almost nobody would find
+     them. Compact single-line pill pair rather than two full label+
+     checkbox rows, to keep the cost on this prime, most-glanced-at part
+     of the screen as small as possible. :has() drives the active/checked
+     look so no JS is needed beyond the existing change listeners below. */
+  /* justify-content:center (2026-11, Tod's call) -- on a narrow phone this
+     row wraps to two lines (the two toggles, then Save for offline + See
+     Top 10), and without this each wrapped line sat flush against the
+     left edge instead of centering itself as its own group. */
+  .pref-pills { display: flex; gap: 8px; margin: 4px 0 14px 0; flex-wrap: wrap; justify-content: center; }
+  .pref-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600; color: #9ca3af;
+    background: #1a2230; border: 1px solid #374151; border-radius: 999px;
+    padding: 7px 13px 7px 10px; cursor: pointer; user-select: none;
   }
-  .pref-toggle input { width: 18px; height: 18px; cursor: pointer; accent-color: #34d399; }
+  .pref-pill input { width: 15px; height: 15px; cursor: pointer; accent-color: #34d399; margin: 0; }
+  .pref-pill:has(input:checked) { color: #6ee7b7; border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.08); }
+
+  /* Save-for-offline action, sitting in the same chip row as the two
+     preference pills (Tod's call, 2026-11) rather than down in Actions.
+     Same color/weight/border as .pref-pill's unchecked state so the row
+     reads as one visual family -- only text-align/white-space/max-width
+     differ, since this one's label grows while saving ("Saving...
+     (12/43)") or on a partial failure, so it can't be locked to the
+     toggles' compact single-line width. */
+  .action-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600; color: #9ca3af;
+    background: #1a2230; border: 1px solid #374151; border-radius: 999px;
+    padding: 7px 13px; cursor: pointer; user-select: none;
+    text-align: left; white-space: normal; max-width: 100%;
+  }
+  .action-pill:disabled { opacity: 0.65; cursor: default; }
   .link-button {
     background: none; border: none; color: #60a5fa; font-size: 14px;
     cursor: pointer; padding: 10px 0; margin: 2px 0 12px 0; text-align: left; display: block;
   }
-  /* Cache-all link (2026-11, Tod's call): the shared .link-button blue reads
-     right for "Plan a Crossing"/"Back to dashboard" where it's the only link
-     on screen, but here it sits directly above the muted Conditions/Tide/
-     Structure guide rows and looked out of place next to them. Muted gray
-     folds it into that same quiet-utility-text family instead. */
-  #cacheAllLink { color: #9ca3af; }
+  /* Section headings (2026-11, Tod's call) -- "Guides" and "Actions" group
+     labels inside .kpi-summary, same tidy-up that renamed the guide
+     dropdowns below to drop their redundant "guide"/"guides" suffix. */
+  .section-heading {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #6b7280; margin: 18px 0 2px 0;
+  }
+  .section-heading:first-child { margin-top: 2px; }
   .field-label { font-size: 12px; color: #9ca3af; margin: 14px 0 4px 0; display: block; }
   input[type="time"] {
     padding: 12px 14px; font-size: 16px; min-height: 48px;
@@ -456,27 +491,18 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   }
   .kpi-summary h2 { margin-top: 0; font-size: 18px; margin-bottom: 10px; }
-  /* The "Conditions guide" dropdown is the panel's first child (2026-09) -- without
-     this it inherits .species-toggle's usual top margin/border, which reads
-     as a stray divider line right under the panel's own padding with
-     nothing above it to separate from (the old plain <h2> used
-     margin-top:0 for the same reason). */
-  .kpi-summary > .species-toggle:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  /* .kpi-summary > .species-toggle:first-child's old margin/border reset
+     (2026-09) is gone (2026-11, Tod's call) -- the panel's actual first
+     child is now the "Guides" .section-heading above, not a .species-toggle,
+     so that override no longer matched anything and was dead weight. */
   .kpi-item { font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
   .info { margin-top: 10px; font-size: 0.85rem; color: #9ca3af; }
   .swipe-hint { font-size: 0.8rem; color: #9ca3af; margin: -4px 0 8px 0; }
-  /* Best Spots link folded into the swipe-hint line (2026-11, Tod's call).
-     #bestSpotsLinkWide is the ≥900px-only variant, hidden by default and
-     shown by the @media(min-width:900px) block below; .swipe-hint-narrow
-     covers both the "Swipe for more..." text AND the narrow-width link,
-     so one media rule there hides/shows all three narrow-only pieces
-     together. */
-  .best-spots-trigger {
-    background: none; border: none; padding: 0; font: inherit;
-    color: #60a5fa; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
-  }
-  .best-spots-trigger:active { opacity: 0.7; }
-  .swipe-hint-wide { display: none; }
+  /* Best Spots link moved out of this line entirely (2026-11, Tod's call)
+     -- it's now the "See Top 10" chip in .pref-pills below the cards, so
+     this is just the plain swipe hint again. Nothing to swipe for once
+     the forecast becomes a side-by-side grid, so the whole line hides at
+     that width -- see @media(min-width:900px) below. */
   .skeleton-card {
     width: 100%; max-width: 340px; height: 220px; border-radius: 14px;
     background: linear-gradient(90deg, #1f2937 25%, #29354a 37%, #1f2937 63%);
@@ -501,14 +527,20 @@
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       max-width: 920px; margin: 0 auto;
     }
-    /* The .swipe-hint LINE itself stays visible at this width (it now
-       carries the Best Spots link too) -- only the swipe-specific wording
-       inside it hides, since there's nothing to swipe for once the
-       forecast is a side-by-side grid. See .swipe-hint-narrow/-wide
-       below. */
-    .swipe-hint-narrow { display: none; }
-    .swipe-hint-wide { display: inline; }
+    /* Nothing to swipe for once the forecast is a side-by-side grid, and
+       the Best Spots link that used to live here has moved into the chip
+       row -- so the whole line just hides at this width. */
+    .swipe-hint { display: none; }
     .kpi-summary { max-width: 760px; margin-left: auto; margin-right: auto; text-align: left; }
+    /* Same reasoning as .link-button below: without an explicit max-width
+       here, .pref-pills stretches to fill .main's full width (up to 1400px)
+       and its contents, being left-justified by default, end up pinned to
+       the far-left edge of the page instead of sitting under the centered
+       card grid. justify-content:center is also set on the base rule now
+       (2026-11) so mobile's wrapped lines center too, not just this wide
+       single-line case -- kept here too since it's harmless and keeps this
+       block's intent self-contained. */
+    .pref-pills { max-width: 920px; margin-left: auto; margin-right: auto; justify-content: center; }
     /* Without width:100% here, .link-button sits centered at whatever width .main
        allows — and for the <button> one (Plan a Crossing), it shrinks to its own text
        and centers around that, since buttons don't auto-stretch to fill a block box
@@ -684,32 +716,49 @@
     </optgroup>
   </select>
   <div class="gauge-note" id="gaugeNote"></div>
-  <!-- Best Spots This Week link (2026-11, Tod's call) -- folded into the
-       swipe-hint line instead of its own line, so the dropdown area gains
-       one line, not two. The "swipe for more" clause only means anything
-       on a narrow screen (.swipe-hint-narrow/#bestSpotsLinkNarrow) --
-       widescreen already shows every day side by side, so there's
-       nothing to swipe for, and #bestSpotsLinkWide shows alone there
-       instead. Both link elements fire the same openBestSpotsView() via
-       the shared .best-spots-trigger class (see the listener below) since
-       they can't share one id. -->
-  <div class="swipe-hint">
-    <span class="swipe-hint-narrow">Swipe for more of this location or </span><button type="button" id="bestSpotsLinkNarrow" class="best-spots-trigger swipe-hint-narrow">see top locations this week</button><span class="swipe-hint-narrow">.</span><button type="button" id="bestSpotsLinkWide" class="best-spots-trigger swipe-hint-wide">See top locations this week →</button>
-  </div>
+  <!-- Best Spots This Week link moved out of this line entirely (2026-11,
+       Tod's call) -- it's now the "See Top 10" chip in .pref-pills below
+       the cards. Just the plain swipe hint again, hidden at ≥900px since
+       there's nothing to swipe for once the forecast is a side-by-side
+       grid (see @media(min-width:900px) above). -->
+  <div class="swipe-hint">Swipe for more of this location.</div>
   <div class="forecast-row" id="cardsGrid">
     <div class="skeleton-row"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
   </div>
   <div id="loadStatus" style="text-align:center;font-size:12px;color:#9ca3af;margin:8px 0 0 0;"></div>
-  <button type="button" class="link-button" id="cacheAllLink">⬇ Cache all locations for offline use</button>
+
+  <!-- Preference pills (2026-11, Tod's call) -- moved out of the old
+       Preferences dropdown to sit directly under the cards, so toggling
+       one and watching load() re-score the cards right above is immediate
+       rather than buried at the bottom of a long guide list. Same
+       #rainPrefToggle/#wavePrefToggle ids and change listeners as before
+       -- only the surrounding markup changed, see .pref-pill CSS above.
+       Cache all locations joined this row as a third chip (2026-11, Tod's
+       call), moved out of Actions below -- same #cacheAllLink id and click
+       listener, restyled as .action-pill since it's a one-shot action
+       rather than a persistent on/off preference. No icon on it (2026-11,
+       Tod's call) -- plain text like the rest of the row.
+       See Top 10 joined as a fourth chip (2026-11, Tod's call), moved out
+       of the swipe-hint line above the cards -- same openBestSpotsView()
+       as before, just relocated and renamed from "See top locations this
+       week" to match the row's short labels. Also plain text, no icon. -->
+  <div class="pref-pills">
+    <label class="pref-pill">
+      <input type="checkbox" id="rainPrefToggle">
+      Light rain helps bite
+    </label>
+    <label class="pref-pill">
+      <input type="checkbox" id="wavePrefToggle">
+      Spot has no chop
+    </label>
+    <button type="button" class="action-pill" id="cacheAllLink">Save for offline</button>
+    <button type="button" class="action-pill" id="seeTop10Chip">See Top 10</button>
+  </div>
 
   <div class="kpi-summary">
     <!-- Collapsed dropdown (2026-09, Tod's call) -- reuses the same small
          toggle style as the in-card Species/Bite/Scoring dropdowns rather
-         than a distinct larger one, for full visual consistency. See the
-         .kpi-summary > .species-toggle:first-child CSS override below --
-         without it this would inherit the toggle's usual top
-         margin/border, which looked like a stray line right under this
-         panel's own top padding with nothing above it to separate from.
+         than a distinct larger one, for full visual consistency.
          Renamed "Calculation guide" -> "Conditions guide" (2026-09, Tod's
          call): the scored-KPI mechanics (points/tiers) are unchanged, but
          each item now also carries the "why" behind it, sourced from Mark
@@ -738,8 +787,9 @@
          Structure guide. "Score thresholds" is a heading of convenience
          for the GO/MAYBE/NO-GO item, which has no natural bolded lead-in
          of its own the way the other items do. -->
+    <div class="section-heading">Guides</div>
     <details class="species-toggle">
-      <summary>Conditions guide</summary>
+      <summary>Conditions</summary>
       <div class="commentary">
         <details class="species-sub-toggle">
           <summary>Wind — 25 pts</summary>
@@ -751,14 +801,14 @@
         <details class="species-sub-toggle">
           <summary>Wave Height — 20 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — see Preferences below to ignore it.</div>
+            <div class="kpi-item">Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — check "Spot has no chop" above the cards to ignore it.</div>
           </div>
         </details>
 
         <details class="species-sub-toggle">
           <summary>Tide — 28 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day — see Tide guide below for what each stage of that cycle actually means for where to fish. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
+            <div class="kpi-item">Up to 20 pts for a high/low turn near dawn or dusk (closer = more points), plus up to 8 bonus pts for a bigger tidal range that day — see Tide below for what each stage of that cycle actually means for where to fish. Source: modeled sea level including tides (Open-Meteo Marine API, ~8km resolution) — good for relative timing and range, not an official port tide table, and less accurate in narrow passages.</div>
           </div>
         </details>
 
@@ -779,7 +829,7 @@
         <details class="species-sub-toggle">
           <summary>Rain near dawn/dusk — 7 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Default: dry scores best (7 pts), rain scores worse. See Preferences below to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low. Neither setting captures the finer detail some anglers use — overcast without rain can extend low-light feeding, dirty water pushes fish to rely on their lateral line over sight, and the edges where rain-dirtied water meets clean can turn into ambush zones after the rain itself has passed — this check only ever reads dry-vs-rain at that moment, not what the rain left behind.</div>
+            <div class="kpi-item">Default: dry scores best (7 pts), rain scores worse. Check "Light rain helps bite" above the cards to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low. Neither setting captures the finer detail some anglers use — overcast without rain can extend low-light feeding, dirty water pushes fish to rely on their lateral line over sight, and the edges where rain-dirtied water meets clean can turn into ambush zones after the rain itself has passed — this check only ever reads dry-vs-rain at that moment, not what the rain left behind.</div>
           </div>
         </details>
 
@@ -807,7 +857,7 @@
         <details class="species-sub-toggle">
           <summary>Species guide</summary>
           <div class="commentary">
-            <div class="kpi-item">Not scored, not live-computed. A separate page-level dropdown below (see Species guide) covers each targeted species' preferred tide phase, structure and lure as general reference, in place of the per-card species clock times this app used to compute.</div>
+            <div class="kpi-item">Not scored, not live-computed. A separate page-level dropdown below (see Species) covers each targeted species' preferred tide phase, structure and lure as general reference, in place of the per-card species clock times this app used to compute.</div>
           </div>
         </details>
 
@@ -848,7 +898,7 @@
          with Structure guide was considered and dropped (Tod's call) --
          that stays separate, untouched. -->
     <details class="species-toggle" id="tidePhasePlanner" style="margin-top:22px;">
-      <summary>Tide guide</summary>
+      <summary>Tide</summary>
       <div class="commentary">
         <div class="kpi-item">Pick where you are in today's tide cycle to see what to fish there — opening this flags where you are right now.</div>
         <div class="phase-picker" id="phasePicker">
@@ -878,7 +928,7 @@
          entries start, since this dropdown's structure-type list is the
          "primary" content its <summary> names. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Structure guide</summary>
+      <summary>Structure</summary>
       <div class="commentary">
         <details class="species-sub-toggle">
           <summary>Deep holes</summary>
@@ -983,7 +1033,7 @@
          smaller/lighter chevron so nesting reads as a level down rather
          than a repeat of the outer control (see CSS). -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Species guide</summary>
+      <summary>Species</summary>
       <div class="commentary">
         <div class="kpi-item">Pick a species to see where it holds, what structure it favours, and what to throw at it.</div>
 
@@ -1215,7 +1265,7 @@
          static table instead, simpler than wiring live show/hide logic
          per location. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Video guides</summary>
+      <summary>Videos</summary>
       <div class="commentary">
           <div class="sub-label">Peninsula</div>
           <table class="video-table">
@@ -1297,37 +1347,28 @@
       </div>
     </details>
 
-    <!-- Preferences holds live toggle state (unlike the reference-only
-         dropdowns above), so its summary line reflects which preferences are
-         actually on right now (see updatePreferencesSummary()) rather than
-         staying a plain, uninformative label while collapsed. Plan a
-         Crossing and the Fishing Spots Map link used to live here too, but
-         moved out 2026-09 (Tod's call) into the new Locations dropdown
-         below -- they were never really "preferences," just squatting here
-         since Preferences was the nearest collapsed dropdown available at
-         the time. -->
-    <details class="species-toggle" style="margin-top:22px;">
-      <summary id="preferencesSummary">Preferences</summary>
-      <label class="pref-toggle">
-        <input type="checkbox" id="rainPrefToggle">
-        I don't mind light rain
-      </label>
-      <label class="pref-toggle">
-        <input type="checkbox" id="wavePrefToggle">
-        I'm not on the open bay
-      </label>
-    </details>
+    <!-- Preferences dropdown removed (2026-11, Tod's call) -- its two
+         checkboxes moved out to the new .pref-pills row under the cards
+         (see above #cardsGrid), same #rainPrefToggle/#wavePrefToggle ids,
+         same change listeners, just a different home. The live-updating
+         "Preferences · light rain OK" summary line this dropdown used to
+         show while collapsed no longer has anywhere to live either --
+         updatePreferencesSummary() and #preferencesSummary are gone with
+         it, since the pills are never collapsed in the first place. -->
 
-    <!-- Planner (2026-09, Tod's call; renamed from "Locations" 2026-11) --
-         consolidates every location-related tool into the one dropdown that
-         used to just be "Search a place": the search box, Plan a Crossing
-         (moved out of Preferences, where it never really belonged), and the
+    <div class="section-heading">Actions</div>
+    <!-- Planner (2026-09, Tod's call; renamed from "Locations" 2026-11;
+         renamed again to "Plan a Crossing" 2026-11, Tod's call, to match
+         the feature's real name elsewhere and read consistently next to
+         Install or Improve the App / Share the app below) -- consolidates
+         every location-related tool into the one dropdown that used to
+         just be "Search a place": the search box, Plan a Crossing (moved
+         out of Preferences, where it never really belonged), and the
          Fishing Spots Map link (moved out of Preferences too). Tod's
          reasoning, and the reason this isn't added complexity: this
          replaces the "Search a place" slot rather than sitting alongside
          it, so the page ends up with one
-         fewer dropdown to scan, not one more, and Preferences goes back to
-         being just the two toggles its name actually promises. Same
+         fewer dropdown to scan, not one more. Same
          #locationSearchInput/#locationSearchBtn/#searchStatus/
          #planCrossingLink/#fishingSpotsMapLink ids as before, so none of
          the existing JS (searchLocation(), the keydown listener, the
@@ -1335,7 +1376,7 @@
          listeners) needed to change -- only where these elements live in
          the page moved, same pattern as the original Search a place move. -->
     <details class="species-toggle" style="margin-top:22px;">
-      <summary>Planner</summary>
+      <summary>Plan a Crossing</summary>
       <div class="commentary">
         <div class="search-row" id="locationSearchRow" style="margin-top:8px;">
           <input type="text" id="locationSearchInput" placeholder="Search a place">
@@ -1393,24 +1434,38 @@
       </div>
     </details>
 
-    <!-- About the app (2026-11, Tod's call) -- the social share card image,
-         reused here instead of writing separate copy. Last in the list,
-         collapsed by default, so it stays out of the way for anyone who
-         already knows what the app does (keeps the "no logo in the UI"
-         minimalism intact while it's closed). about-card.png must sit at
-         the repo ROOT like the other images, not a subfolder -- see the
-         manifest.json icon-path bug this already hit once. Tap-to-copy
-         (2026-11, Tod's call) -- see copyAboutCard(): copies the image
-         itself to the clipboard so it can be pasted straight into a social
-         post, with a text fallback message for browsers that don't support
-         clipboard image writes yet. -->
+    <!-- Share the app (2026-11, Tod's call; renamed from "About the app" to
+         read as an action alongside Plan a Crossing/Install or Improve the
+         App above, now that it's grouped under Actions) -- the social
+         share card image, reused here instead of writing separate copy.
+         Last in the list, collapsed by default, so it stays out of the way
+         for anyone who already knows what the app does (keeps the "no logo
+         in the UI" minimalism intact while it's closed). about-card.png
+         must sit at the repo ROOT like the other images, not a subfolder --
+         see the manifest.json icon-path bug this already hit once.
+         Tap-to-copy (2026-11, Tod's call) -- see copyAboutCard(): copies
+         the image itself to the clipboard so it can be pasted straight
+         into a social post, with a text fallback message for browsers that
+         don't support clipboard image writes yet. The instruction line
+         moved above the image (2026-11, Tod's call) -- now that the
+         dropdown is framed as an action rather than information, leading
+         with "here's what to do" reads better than finding out after
+         already looking at the image. #aboutCardStatus below the image now
+         starts empty and only holds transient copy feedback, since the
+         standing instruction lives in the new line above instead. -->
     <details class="species-toggle" id="aboutCardToggle" style="margin-top:22px;">
-      <summary>About the app</summary>
+      <summary>Share the app</summary>
       <div class="commentary">
+        <div class="gauge-note" style="margin:0 0 8px 0;">Tap the image below to copy it, ready to paste into a text, group chat, or social post.</div>
         <img id="aboutCardImg" src="about-card.png" alt="FishGoNoGo — Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. 43 preset locations from Noosa to Tweed. Fishing with mates? Share as text. Done." style="width:100%; border-radius:14px; display:block; cursor:pointer;">
-        <div class="gauge-note" id="aboutCardStatus" style="margin:8px 0 0 0;">Tap the card to copy it, ready to paste into a social post.</div>
+        <div class="gauge-note" id="aboutCardStatus" style="margin:8px 0 0 0;"></div>
       </div>
     </details>
+
+    <!-- Cache all locations moved out of Actions (2026-11, Tod's call) --
+         now lives as the third chip in .pref-pills, right under the cards
+         (see above #cardsGrid), same #cacheAllLink id and click listener
+         as before. -->
   </div>
   </div>
 
@@ -1682,7 +1737,7 @@ async function cacheAllLocations() {
   const CONCURRENCY = 3;
   let completed = 0, failed = 0;
   linkEl.disabled = true;
-  linkEl.textContent = `⬇ Caching… (0/${keys.length})`;
+  linkEl.textContent = `Saving… (0/${keys.length})`;
 
   async function cacheOne(key) {
     const loc = LOCATIONS[key];
@@ -1702,7 +1757,7 @@ async function cacheAllLocations() {
       console.warn("Cache all locations: failed for", key, e);
     } finally {
       completed++;
-      linkEl.textContent = `⬇ Caching… (${completed}/${keys.length})`;
+      linkEl.textContent = `Saving… (${completed}/${keys.length})`;
     }
   }
 
@@ -1718,11 +1773,11 @@ async function cacheAllLocations() {
   linkEl.disabled = false;
   const okCount = keys.length - failed;
   linkEl.textContent = failed
-    ? `⬇ Cached ${okCount}/${keys.length} locations (${failed} couldn't load — tap to try again)`
-    : `⬇ Cached all ${keys.length} locations for offline use`;
+    ? `Saved ${okCount}/${keys.length} (${failed} couldn't load — tap to try again)`
+    : `Saved ${keys.length} locations for offline`;
   if (!failed) {
     setTimeout(() => {
-      if (linkEl) linkEl.textContent = "⬇ Cache all locations for offline use";
+      if (linkEl) linkEl.textContent = "Save for offline";
     }, 5000);
   }
 }
@@ -2165,12 +2220,19 @@ function computeSafeUntil(series) {
   const tied = candidates.filter(c => c.hour === crossHour);
   const cause = tied.map(c => c.label).join(" and ");
   const metric = tied[0].metric;
+  // "wind" and "rain" are singular/uncountable ("the wind builds", "the rain
+  // builds") while "waves" and "gusts" are plural ("the waves build") -- a
+  // flat "${cause} build" reads wrong for a lone wind or rain cause. A
+  // two-cause join ("wind and rain") is a compound subject either way, so
+  // "build" is correct there regardless of which metrics are involved.
+  const singularCauses = new Set(["wind", "rain"]);
+  const buildVerb = (tied.length === 1 && singularCauses.has(tied[0].metric)) ? "builds" : "build";
 
   const timeLabel = minutesToClock(crossHour * 60);
   if (crossHour <= 6) {
     return { text: `Conditions are above comfort levels this morning (${cause}).`, crossHour, metric };
   }
-  return { text: `Conditions look comfortable until ~${timeLabel}, then ${cause} build.`, crossHour, metric };
+  return { text: `Conditions look comfortable until ~${timeLabel}, then ${cause} ${buildVerb}.`, crossHour, metric };
 }
 
 /* Charts whichever metric actually triggered the safe-until warning (wind, wave, gust
@@ -3609,19 +3671,12 @@ async function load() {
   document.getElementById("wavePrefToggle").checked = ignoreWaveHeight();
 })();
 
-// Preferences dropdown (2026-09) starts collapsed, so its summary line is
-// the only thing visible without opening it -- this keeps that line honest
-// about which preferences are actually active, rather than a plain
-// "Preferences" label that could hide a toggle you forgot was on. Called
-// once at load and again on every toggle change, below.
-function updatePreferencesSummary() {
-  const active = [];
-  if (prefersLightRain()) active.push("light rain OK");
-  if (ignoreWaveHeight()) active.push("not on open bay");
-  const el = document.getElementById("preferencesSummary");
-  if (el) el.textContent = active.length ? `Preferences · ${active.join(", ")}` : "Preferences";
-}
-updatePreferencesSummary();
+// updatePreferencesSummary() removed (2026-11, Tod's call) -- it used to
+// keep the collapsed Preferences dropdown's <summary> line honest about
+// which preferences were active. That dropdown is gone; the two toggles
+// are now always-visible .pref-pills under the cards (see above
+// initRainPref/initWavePref), whose own CSS (.pref-pill:has(input:checked))
+// shows the active state directly, with no JS needed for it.
 
 // GPS coordinates (2026-11, Tod's call: "could we do it by GPS
 // coordinates" -- copying straight out of Google Maps, which gives decimal
@@ -3763,12 +3818,10 @@ document.getElementById("coordHintExample").addEventListener("click", () => {
 document.getElementById("cacheAllLink").addEventListener("click", cacheAllLocations);
 document.getElementById("rainPrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(RAIN_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
-  updatePreferencesSummary();
   load();
 });
 document.getElementById("wavePrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(WAVE_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
-  updatePreferencesSummary();
   load();
 });
 
@@ -4193,7 +4246,7 @@ document.getElementById("backToDashboardBtn").addEventListener("click", () => {
   document.getElementById("crossingView").style.display = "none";
   document.getElementById("dashboardView").style.display = "block";
 });
-document.querySelectorAll(".best-spots-trigger").forEach(el => el.addEventListener("click", openBestSpotsView));
+document.getElementById("seeTop10Chip").addEventListener("click", openBestSpotsView);
 document.getElementById("backToDashboardFromBestSpotsBtn").addEventListener("click", closeBestSpotsView);
 document.getElementById("bestSpotsRefreshBtn").addEventListener("click", scanBestSpots);
 document.getElementById("bestSpotsShareBtn").addEventListener("click", (e) => shareBestSpots(e.currentTarget));
@@ -4206,7 +4259,10 @@ document.getElementById("bestSpotsShareBtn").addEventListener("click", (e) => sh
    falls back to a plain-text hint rather than failing silently. */
 async function copyAboutCard() {
   const statusEl = document.getElementById("aboutCardStatus");
-  const hint = "Tap the card to copy it, ready to paste into a social post.";
+  // Standing instruction now lives in the static line above the image
+  // (2026-11, Tod's call) -- this element only ever holds transient copy
+  // feedback, so it reverts to empty rather than re-showing a hint.
+  const hint = "";
   try {
     const resp = await fetch("about-card.png");
     const blob = await resp.blob();
