@@ -24,6 +24,12 @@
 <meta name="twitter:title" content="FishGoNoGo">
 <meta name="twitter:description" content="Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. Fishing with mates? Share as text. Done.">
 <meta name="twitter:image" content="https://todrcampbell.github.io/FishGoNoGo/social-card.png">
+<!-- GoatCounter (2026-11, Tod's call) -- privacy-friendly page-view
+     analytics, no cookies, Tod's own account. Base layer only for now
+     (plain page views); per-feature event tracking (Best Spots, Plan a
+     Crossing, etc.) is a separate, not-yet-agreed addition. -->
+<script data-goatcounter="https://todcampbell.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
@@ -1120,10 +1126,10 @@
          first thing shown, ahead of the per-OS steps. Subheadings reuse
          .sub-label the same way "Bite times" holds "Species times"
          underneath it. -->
-    <details class="species-toggle" style="margin-top:22px;">
+    <details class="species-toggle" id="installGuideToggle" style="margin-top:22px;">
       <summary>Install or Improve the App</summary>
       <div class="commentary">
-        <div class="gauge-note" style="margin:0 0 12px 0;">Got an idea for this app, or found something off?<br><a href="mailto:fishgonogo@gmail.com?subject=FishGoNoGo%20suggestion" style="color:#60a5fa; text-decoration:underline; text-underline-offset:2px;">Suggest an Improvement</a>.</div>
+        <div class="gauge-note" style="margin:0 0 12px 0;">Got an idea for this app, or found something off?<br><a id="feedbackLink" href="mailto:fishgonogo@gmail.com?subject=FishGoNoGo%20suggestion" style="color:#60a5fa; text-decoration:underline; text-underline-offset:2px;">Suggest an Improvement</a>.</div>
 
         <div class="sub-label">On Android</div>
         <ol style="margin:0 0 10px 0; padding-left: 20px;">
@@ -1163,7 +1169,7 @@
          itself to the clipboard so it can be pasted straight into a social
          post, with a text fallback message for browsers that don't support
          clipboard image writes yet. -->
-    <details class="species-toggle" style="margin-top:22px;">
+    <details class="species-toggle" id="aboutCardToggle" style="margin-top:22px;">
       <summary>About the app</summary>
       <div class="commentary">
         <img id="aboutCardImg" src="about-card.png" alt="FishGoNoGo — Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. 43 preset locations from Noosa to Tweed. Fishing with mates? Share as text. Done." style="width:100%; border-radius:14px; display:block; cursor:pointer;">
@@ -1676,7 +1682,24 @@ async function scanBestSpots() {
 // Showing last time's results immediately (if any) then always rescanning
 // in the background -- see the comment on #bestSpotsView in the markup
 // above for why, and for the refresh icon alongside it.
+/* Feature-usage events (2026-11, Tod's call) -- six coarse "was this
+   opened/used" events on top of the plain GoatCounter page view, chosen to
+   answer which parts of the app actually get touched rather than every
+   click. Guarded so a blocked/failed-to-load analytics script (ad
+   blockers are common per GoatCounter's own numbers) never breaks the
+   app itself. */
+function trackEvent(path) {
+  try {
+    if (window.goatcounter && typeof window.goatcounter.count === "function") {
+      window.goatcounter.count({ path, event: true });
+    }
+  } catch (e) {
+    console.error("FishGoNoGo: event tracking failed", e);
+  }
+}
+
 function openBestSpotsView() {
+  trackEvent("best-spots-opened");
   document.getElementById("dashboardView").style.display = "none";
   document.getElementById("crossingView").style.display = "none";
   document.getElementById("bestSpotsView").style.display = "block";
@@ -3781,6 +3804,7 @@ async function generateTripPrompt() {
     resultEl.innerHTML = `<div class="card">Pick both a "leave from" place and a destination first.</div>`;
     return;
   }
+  trackEvent("trip-prompt-generated");
   const dayOffset = parseInt(document.getElementById("crossDaySelect").value, 10) || 0;
   const departHour = parseInt(document.getElementById("crossDepartTime").value.split(":")[0], 10);
   const returnHour = parseInt(document.getElementById("crossReturnTime").value.split(":")[0], 10);
@@ -3923,6 +3947,7 @@ function populateCrossDaySelect() {
 }
 
 document.getElementById("planCrossingLink").addEventListener("click", () => {
+  trackEvent("crossing-opened");
   populateCrossDaySelect();
   populateCrossLocationSelects();
   updateEnRouteDisplay();
@@ -3963,6 +3988,14 @@ async function copyAboutCard() {
   }
 }
 document.getElementById("aboutCardImg").addEventListener("click", copyAboutCard);
+
+document.getElementById("installGuideToggle").addEventListener("toggle", (e) => {
+  if (e.target.open) trackEvent("install-guide-opened");
+});
+document.getElementById("aboutCardToggle").addEventListener("toggle", (e) => {
+  if (e.target.open) trackEvent("about-card-opened");
+});
+document.getElementById("feedbackLink").addEventListener("click", () => trackEvent("feedback-clicked"));
 document.getElementById("bestSpotsResults").addEventListener("click", (e) => {
   const item = e.target.closest(".best-spot-item");
   if (!item) return;
