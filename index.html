@@ -1158,11 +1158,16 @@
          already knows what the app does (keeps the "no logo in the UI"
          minimalism intact while it's closed). about-card.png must sit at
          the repo ROOT like the other images, not a subfolder -- see the
-         manifest.json icon-path bug this already hit once. -->
+         manifest.json icon-path bug this already hit once. Tap-to-copy
+         (2026-11, Tod's call) -- see copyAboutCard(): copies the image
+         itself to the clipboard so it can be pasted straight into a social
+         post, with a text fallback message for browsers that don't support
+         clipboard image writes yet. -->
     <details class="species-toggle" style="margin-top:22px;">
       <summary>About the app</summary>
       <div class="commentary">
-        <img src="about-card.png" alt="FishGoNoGo — Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. 43 preset locations from Noosa to Tweed. Fishing with mates? Share as text. Done." style="width:100%; border-radius:14px; display:block;">
+        <img id="aboutCardImg" src="about-card.png" alt="FishGoNoGo — Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. 43 preset locations from Noosa to Tweed. Fishing with mates? Share as text. Done." style="width:100%; border-radius:14px; display:block; cursor:pointer;">
+        <div class="gauge-note" id="aboutCardStatus" style="margin:8px 0 0 0;">Tap the card to copy it, ready to paste into a social post.</div>
       </div>
     </details>
   </div>
@@ -3932,6 +3937,32 @@ document.querySelectorAll(".best-spots-trigger").forEach(el => el.addEventListen
 document.getElementById("backToDashboardFromBestSpotsBtn").addEventListener("click", closeBestSpotsView);
 document.getElementById("bestSpotsRefreshBtn").addEventListener("click", scanBestSpots);
 document.getElementById("bestSpotsShareBtn").addEventListener("click", (e) => shareBestSpots(e.currentTarget));
+
+/* About the app -- tap-to-copy (2026-11, Tod's call). Copies the card
+   image itself to the clipboard via the Clipboard API's image support, so
+   it can be pasted straight into a Facebook/Instagram/etc. post with no
+   download step. Not every browser supports writing images to the
+   clipboard yet (older Firefox/Safari versions in particular), so this
+   falls back to a plain-text hint rather than failing silently. */
+async function copyAboutCard() {
+  const statusEl = document.getElementById("aboutCardStatus");
+  const hint = "Tap the card to copy it, ready to paste into a social post.";
+  try {
+    const resp = await fetch("about-card.png");
+    const blob = await resp.blob();
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    if (statusEl) {
+      statusEl.textContent = "Copied! Paste it straight into a post.";
+      setTimeout(() => { statusEl.textContent = hint; }, 2000);
+    }
+  } catch (e) {
+    console.error("FishGoNoGo: about-card copy failed", e);
+    if (statusEl) {
+      statusEl.textContent = "Couldn't copy automatically — long-press (or right-click) the image instead to save or copy it.";
+    }
+  }
+}
+document.getElementById("aboutCardImg").addEventListener("click", copyAboutCard);
 document.getElementById("bestSpotsResults").addEventListener("click", (e) => {
   const item = e.target.closest(".best-spot-item");
   if (!item) return;
