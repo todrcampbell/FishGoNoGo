@@ -549,6 +549,44 @@
        space. */
     #locationSearchBtn { padding: 12px 14px; flex-shrink: 0; }
   }
+  /* Bag & size limits table (2026-11, Tod's call) -- first <table> in the
+     app. Kept plain rather than inventing a card style, since this is a
+     quick lookup, not a read. Tabular-nums on the numeric columns so
+     cm/counts line up down the column. Figures sourced from Queensland
+     Fisheries (qld.gov.au/recreation/activities/boating-fishing/rec-fishing/
+     rules/limits-tidal), current as of 25 Sep 2026 -- rules change, hence
+     the disclaimer+link under the table rather than presenting this as
+     permanent fact. */
+  .limits-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 2px; }
+  .limits-table th {
+    text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em; color: #9ca3af; padding: 0 0 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .limits-table th.num { text-align: right; }
+  .limits-table td {
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    vertical-align: top;
+  }
+  .limits-table tr:last-child td { border-bottom: none; }
+  .limits-table td.species { color: #f3f4f6; font-weight: 600; padding-right: 8px; }
+  .limits-table td.num {
+    text-align: right; font-variant-numeric: tabular-nums; color: #e5e7eb;
+    white-space: nowrap;
+  }
+  .limits-table .variant { display: block; font-size: 11px; font-weight: 400; color: #9ca3af; margin-top: 1px; white-space: normal; }
+  /* Video guides table (2026-11, Tod's call) -- location/channel/watch-link
+     rows grouped under .sub-label region headers (same pattern as Install
+     guide's On Android/On iPhone/On Windows). Separate from .limits-table
+     since the right-hand column here is a link, not a number, and the
+     left column carries two lines (location + channel) rather than one. */
+  .video-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .video-table td { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: top; }
+  .video-table tr:last-child td { border-bottom: none; }
+  .video-table td.loc { color: #f3f4f6; font-weight: 600; padding-right: 10px; }
+  .video-table td.loc .chan { display: block; font-size: 11px; font-weight: 400; color: #9ca3af; margin-top: 1px; }
+  .video-table td.watch { text-align: right; white-space: nowrap; }
+  .video-table td.watch a { color: #60a5fa; text-decoration: none; font-weight: 600; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -1059,6 +1097,203 @@
         </details>
 
         <div class="kpi-item" style="margin-top:12px;">Species-specific structure and tide theory, not tied to this app's live data or any specific estuary — a starting point to adapt to your own spot, not a rule.</div>
+      </div>
+    </details>
+
+    <!-- Bag & size limits (2026-11, Tod's call) -- standalone dropdown
+         rather than folded into Species guide above, so it reads as a
+         quick lookup table rather than more guide prose. Figures sourced
+         from Queensland Fisheries (qld.gov.au/recreation/activities/
+         boating-fishing/rec-fishing/rules/limits-tidal), current as of
+         25 Sep 2026 -- that page is the single source of truth, this is
+         just a convenience copy, hence the disclaimer+link under the
+         table. Covers the same 12 species as Species guide above, with
+         dusky flathead, king/blue threadfin salmon and swallowtail dart
+         broken out separately where Queensland's own rules distinguish
+         them (Tod's call, 2026-11). Closed-season dates deliberately left
+         out of v1 (Tod's call) -- size and possession limits only. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Bag &amp; size limits</summary>
+      <div class="commentary">
+        <table class="limits-table">
+          <tr>
+            <th>Species</th>
+            <th class="num">Min size</th>
+            <th class="num">Limit</th>
+          </tr>
+          <tr>
+            <td class="species">Bream</td>
+            <td class="num">25cm</td>
+            <td class="num">30<span class="variant">combined w/ tarwhine</span></td>
+          </tr>
+          <tr>
+            <td class="species">Flathead</td>
+            <td class="num">30cm</td>
+            <td class="num">5<span class="variant">combined, excl. dusky</span></td>
+          </tr>
+          <tr>
+            <td class="species">Dusky flathead</td>
+            <td class="num">40–75cm<span class="variant">release if over</span></td>
+            <td class="num">5</td>
+          </tr>
+          <tr>
+            <td class="species">Whiting (sand/summer)</td>
+            <td class="num">23cm</td>
+            <td class="num">30<span class="variant">combined, 3 species</span></td>
+          </tr>
+          <tr>
+            <td class="species">Whiting (trumpeter/winter)</td>
+            <td class="num">—</td>
+            <td class="num">50</td>
+          </tr>
+          <tr>
+            <td class="species">Trevally</td>
+            <td class="num">—</td>
+            <td class="num">20<span class="variant">combined, all trevally</span></td>
+          </tr>
+          <tr>
+            <td class="species">Jew (mulloway)</td>
+            <td class="num">75cm</td>
+            <td class="num">2<span class="variant">kept whole on boat</span></td>
+          </tr>
+          <tr>
+            <td class="species">Tailor</td>
+            <td class="num">35cm</td>
+            <td class="num">20</td>
+          </tr>
+          <tr>
+            <td class="species">Dart</td>
+            <td class="num">30cm</td>
+            <td class="num">30</td>
+          </tr>
+          <tr>
+            <td class="species">Mangrove jack</td>
+            <td class="num">35cm</td>
+            <td class="num">5</td>
+          </tr>
+          <tr>
+            <td class="species">Squid</td>
+            <td class="num">—</td>
+            <td class="num">50</td>
+          </tr>
+          <tr>
+            <td class="species">Threadfin salmon (king)</td>
+            <td class="num">65cm</td>
+            <td class="num">5</td>
+          </tr>
+          <tr>
+            <td class="species">Threadfin salmon (blue)</td>
+            <td class="num">40cm</td>
+            <td class="num">10</td>
+          </tr>
+          <tr>
+            <td class="species">Snapper</td>
+            <td class="num">35cm</td>
+            <td class="num">4<span class="variant">max 1 over 70cm; 8/2 per boat</span></td>
+          </tr>
+          <tr>
+            <td class="species">Sweetlip (grass emperor)</td>
+            <td class="num">30cm</td>
+            <td class="num">10</td>
+          </tr>
+        </table>
+        <div class="gauge-note">Figures from Queensland Fisheries, current as of 25 Sep 2026. Rules change — always check <a href="https://www.qld.gov.au/recreation/activities/boating-fishing/rec-fishing/rules/limits-tidal" target="_blank" rel="noopener">qld.gov.au</a> before you fish.</div>
+      </div>
+    </details>
+
+    <!-- Video guides (2026-11, Tod's call) -- standalone dropdown, one
+         location/channel/watch-link row per app location, grouped by the
+         same 11 regions as the #locationSelect optgroups above, using
+         .sub-label dividers (same pattern as Install guide's On Android/
+         On iPhone/On Windows). Source: a creator-video map Tod compiled
+         with Gemini's help (not Tod-confirmed per video beyond the Pine
+         River entry, which he's personally watched) -- some rows
+         deliberately share one video where that creator's episode tours
+         several nearby spots at once (weFish-AU does this a lot), hence
+         the disclaimer line at the end. Replaces an earlier inline
+         per-location "Watch this spot" link idea -- Tod's call to use one
+         static table instead, simpler than wiring live show/hide logic
+         per location. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Video guides</summary>
+      <div class="commentary">
+          <div class="sub-label">Peninsula</div>
+          <table class="video-table">
+            <tr><td class="loc">Pine River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=xlnEUGkp2Ww" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Woody Point<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=upzgJPb2Zig" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Margate<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=Yvgu-WXtkp4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Scarborough Reef<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=-ZqL1qK7dVc" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Brisbane</div>
+          <table class="video-table">
+            <tr><td class="loc">Fisherman&#x27;s Island<span class="chan">10 Brisbane Hotspots</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=JKR9kPvKKrg" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Mud Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=Tz3RgcKj2cU" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">St Helena Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=d6ntlsXfY2A" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Bribie Island</div>
+          <table class="video-table">
+            <tr><td class="loc">Bongaree<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=EN3PnqTevTg" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Woody Bay<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=IfLvba3JE3w" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Woorim<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=EN3PnqTevTg" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Caboolture River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=CbFPfAMXvxI" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Pumicestone Passage<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=TEyAWhLgQjw" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Moreton Island</div>
+          <table class="video-table">
+            <tr><td class="loc">Bulwer<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=BiY8QGPLmT8" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Tangalooma<span class="chan">Will Lee Fishing</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=P8U_z01cUMQ" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Lucinda Bay<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=CxCkA85LWMA" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Kooringal<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=qiecmZgIfbE" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Reefs</div>
+          <table class="video-table">
+            <tr><td class="loc">Turners<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=qiecmZgIfbE" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Harry Atkinsons<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=u0pyZ5iegr4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">North Moreton<span class="chan">Adventure Primal</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=j-xkG95oZes" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Curtin<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=8SCtwz8ASNI" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Beacons</div>
+          <table class="video-table">
+            <tr><td class="loc">The Coffee Pots<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=CxCkA85LWMA" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">The Four Beacons<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=TEyAWhLgQjw" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Comboyuro Beacons<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=CxCkA85LWMA" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Redlands Coast</div>
+          <table class="video-table">
+            <tr><td class="loc">Cleveland Point<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=KsobkLo-O0U" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Wellington Point<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=KsobkLo-O0U" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Victoria Point<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=eOMAYKXjH3Q" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Southern Islands</div>
+          <table class="video-table">
+            <tr><td class="loc">Coochiemudlo Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=eOMAYKXjH3Q" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Russell Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=XmrJEH_Jry4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Macleay Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=XmrJEH_Jry4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Lamb Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=XmrJEH_Jry4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Karragarra Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=XmrJEH_Jry4" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Peel Island<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=d0ka6R4Z3Ds" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Stradbroke Island</div>
+          <table class="video-table">
+            <tr><td class="loc">Dunwich<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=pzmefB6Cx58" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Amity Point<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=pzmefB6Cx58" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Point Lookout<span class="chan">Brisbane Hooked on Fishing</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=7lLZE42QfH8" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Southern Rivers</div>
+          <table class="video-table">
+            <tr><td class="loc">Tweed River<span class="chan">Will Lee Fishing</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=x8gwS1EGixg" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Logan River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=4QhwO1NeewU" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Albert River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=4QhwO1NeewU" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Coomera River<span class="chan">weFish-AU</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=cWUXruYiagE" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+          <div class="sub-label">Sunshine Coast</div>
+          <table class="video-table">
+            <tr><td class="loc">Noosa River<span class="chan">riveRecon</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=-0R3o_p3rQY" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Maroochy River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=sH0GSq95ZdQ" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Mooloolaba River<span class="chan">Land and Bay Fishing SEQ</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=iixXztS_bOQ" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+            <tr><td class="loc">Caloundra Bar<span class="chan">Doc Lures / David Granville</span></td><td class="watch"><a href="https://www.youtube.com/watch?v=Ow1Xq7NKMWc" target="_blank" rel="noopener">Watch &#8594;</a></td></tr>
+          </table>
+        <div class="gauge-note">Spot-overview videos from local creators on YouTube — not affiliated with FishGoNoGo. Some videos cover more than one nearby spot.</div>
       </div>
     </details>
 
