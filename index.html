@@ -58,6 +58,21 @@
   }
   select:active { background: #26313f; }
   select:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
+  /* Pin button (2026-11, Tod's call: "pin favourites... reorder seems to be
+     a good option" -- reorder-only, no new row of its own). Sits directly
+     beside the location dropdown; disabled for a custom search/GPS/geocoded
+     spot, since LOCATIONS.custom is a single mutable slot overwritten by
+     every lookup, not a stable preset worth pinning. */
+  .location-row { display: flex; align-items: center; gap: 8px; max-width: 420px; }
+  .location-row select { max-width: none; flex: 1 1 auto; min-width: 0; }
+  .pin-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; flex-shrink: 0; margin-bottom: 10px;
+    font-size: 19px; background: #1f2937; color: #9ca3af;
+    border: 1px solid #374151; border-radius: 10px; cursor: pointer;
+  }
+  .pin-btn.pinned { color: #fcd34d; border-color: rgba(252,211,77,0.5); background: rgba(252,211,77,0.08); }
+  .pin-btn:disabled { opacity: 0.4; cursor: default; }
   /* Smaller text just for the location list (2026-09, Tod's call) -- it's
      grown to 43 options across 11 groups (2026-11: added Redlands Coast/
      Southern Islands/Stradbroke Island/Southern Rivers/Sunshine Coast), so
@@ -517,6 +532,13 @@
     select, .search-row, .gauge-note, #searchStatus {
       margin-left: auto; margin-right: auto;
     }
+    /* .location-row (2026-11, pin button) wraps the location <select> in a
+       block-level flex div now, so it no longer benefits from body's
+       text-align:center the way a bare inline <select> did -- needs its own
+       explicit margin:auto to stay centered at this width. */
+    .location-row {
+      margin-left: auto; margin-right: auto;
+    }
     .forecast-row {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       max-width: 920px; margin: 0 auto;
@@ -648,6 +670,7 @@
        first sketch showed, since native <select><optgroup> doesn't support
        a group inside a group -- confirmed with him, this flat version is
        what he wants. -->
+  <div class="location-row">
   <select id="locationSelect">
     <optgroup label="Peninsula">
       <option value="pine" selected>Pine River</option>
@@ -715,6 +738,8 @@
       <option value="caloundrabar">Caloundra Bar</option>
     </optgroup>
   </select>
+  <button type="button" class="pin-btn" id="pinLocationBtn" aria-label="Pin this location" title="Pin this location">☆</button>
+  </div>
   <div class="gauge-note" id="gaugeNote"></div>
   <!-- Best Spots This Week link moved out of this line entirely (2026-11,
        Tod's call) -- it's now the "See Top 10" chip in .pref-pills below
@@ -1652,6 +1677,72 @@ const LOCATIONS = {
 const LOCATION_GROUPS = ["Peninsula", "Brisbane", "Bribie Island", "Moreton Island", "Reefs", "Beacons", "Redlands Coast", "Southern Islands", "Stradbroke Island", "Southern Rivers", "Sunshine Coast"];
 
 const STORAGE_KEY = "fishGoNoGo.lastLocation";
+
+const PINNED_LOCATIONS_KEY = "fishGoNoGo.pinnedLocations";
+
+// Pin favourites (2026-11, Tod's call: "pin favourites... reorder seems to
+// be a good option") -- a pinned location gets copied into a new "★ Pinned"
+// optgroup at the very top of #locationSelect, sorted alphabetically; it
+// also stays in its normal regional optgroup below, unchanged (Tod's call:
+// "leave the pinned in its group"), so browsing by region still works
+// exactly as it does today. Only real presets can be pinned (LOCATIONS[key]
+// .group is only set on the 43 hand-authored entries above -- LOCATIONS.custom
+// is a single mutable slot overwritten by every search/GPS/geocode lookup,
+// not a stable thing worth pinning).
+function getPinnedLocations() {
+  try {
+    const raw = localStorage.getItem(PINNED_LOCATIONS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(k => LOCATIONS[k] && LOCATIONS[k].group) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setPinnedLocations(keys) {
+  try { localStorage.setItem(PINNED_LOCATIONS_KEY, JSON.stringify(keys)); } catch (e) { /* storage unavailable, ignore */ }
+}
+
+function renderPinnedOptgroup() {
+  const select = document.getElementById("locationSelect");
+  const currentValue = select.value;
+  const existing = document.getElementById("pinnedOptgroup");
+  if (existing) existing.remove();
+
+  const pinned = getPinnedLocations();
+  if (pinned.length) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.id = "pinnedOptgroup";
+    optgroup.label = "★ Pinned";
+    pinned
+      .slice()
+      .sort((a, b) => LOCATIONS[a].name.localeCompare(LOCATIONS[b].name))
+      .forEach(key => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = `★ ${LOCATIONS[key].name}`;
+        optgroup.appendChild(opt);
+      });
+    select.insertBefore(optgroup, select.firstChild);
+  }
+  // Restore selection by value (not by node reference) -- removing/rebuilding
+  // the pinned optgroup can drop the exact <option> node that was selected,
+  // but the same value always still exists in its regional optgroup below.
+  select.value = currentValue;
+}
+
+function updatePinButtonUI(key) {
+  const btn = document.getElementById("pinLocationBtn");
+  if (!btn) return;
+  const pinnable = !!(LOCATIONS[key] && LOCATIONS[key].group);
+  btn.disabled = !pinnable;
+  const pinned = pinnable && getPinnedLocations().includes(key);
+  btn.textContent = pinned ? "★" : "☆";
+  btn.classList.toggle("pinned", pinned);
+  const label = !pinnable ? "Custom locations can't be pinned" : (pinned ? "Unpin this location" : "Pin this location");
+  btn.setAttribute("aria-label", label);
+  btn.title = label;
+}
 
 // Set to false to drop the hourly wind chart and keep only the "safe until" sentence,
 // if the chart proves too bulky on small screens.
@@ -3578,6 +3669,7 @@ async function load() {
   const { lat, lon, name } = loc;
 
   try { localStorage.setItem(STORAGE_KEY, key); } catch (e) { /* storage unavailable, ignore */ }
+  updatePinButtonUI(key);
 
   const gaugeNote = document.getElementById("gaugeNote");
   gaugeNote.textContent = loc.distantGauge
@@ -3661,6 +3753,11 @@ async function load() {
       document.getElementById("locationSelect").value = saved;
     }
   } catch (e) { /* storage unavailable, ignore */ }
+})();
+
+(function initPinnedLocations() {
+  renderPinnedOptgroup();
+  updatePinButtonUI(document.getElementById("locationSelect").value);
 })();
 
 (function initRainPref() {
@@ -3810,6 +3907,17 @@ document.getElementById("locationSearchInput").addEventListener("keydown", (e) =
   if (e.key === "Enter") { e.preventDefault(); searchLocation(); }
 });
 document.getElementById("locationSelect").addEventListener("change", load);
+document.getElementById("pinLocationBtn").addEventListener("click", () => {
+  const select = document.getElementById("locationSelect");
+  const key = select.value;
+  if (!(LOCATIONS[key] && LOCATIONS[key].group)) return; // custom location, not pinnable
+  let pinned = getPinnedLocations();
+  pinned = pinned.includes(key) ? pinned.filter(k => k !== key) : pinned.concat(key);
+  setPinnedLocations(pinned);
+  renderPinnedOptgroup();
+  select.value = key;
+  updatePinButtonUI(key);
+});
 document.getElementById("coordHintExample").addEventListener("click", () => {
   const input = document.getElementById("locationSearchInput");
   input.value = "-27.1630, 153.3684";
