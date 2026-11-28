@@ -985,6 +985,66 @@
       </div>
     </details>
 
+    <!-- Wind direction guide (2026-11, Tod's call) -- started from a table
+         Tod had checked against CSIRO sources, written around named Moreton
+         Bay landmarks (Bramble Bay, Woody Point, Mud/Peel Island, etc).
+         Dropped every place name here (Tod's call: "bramble bay for example
+         is irrelevant to tweed heads" -- the app now covers 40+ locations
+         well outside Moreton Bay, so anything tied to a specific shoreline
+         doesn't generalise). What's left is pure wind-vs-shore-orientation
+         physics -- which compass-facing shore catches the chop and dirty
+         water, which stays sheltered -- true at any location regardless of
+         whether it's a bay, open coast, or river mouth. Same nested
+         .species-sub-toggle pattern as Conditions/Structure above, one
+         entry per direction bucket. This generalised wording is also what
+         drives the live per-card Commentary note (see windDirectionNote()
+         in the JS below) -- the original place-named table stays unused
+         outside this guide, kept out of anything auto-generated per
+         location. Placed after Tide (Tod's call), not at the end with
+         Videos -- it's conditions knowledge, grouped with Conditions/Tide
+         rather than the reference-list guides further down. -->
+    <details class="species-toggle" style="margin-top:22px;">
+      <summary>Wind direction</summary>
+      <div class="commentary">
+        <div class="kpi-item">General patterns for how wind direction affects water clarity, chop and shelter — based on wind-vs-shore physics, so it applies wherever you're fishing, not just one spot. See the Commentary dropdown on each card for the day's actual wind direction called out this same way.</div>
+
+        <details class="species-sub-toggle">
+          <summary>North / North-East</summary>
+          <div class="commentary">
+            <div class="kpi-item">Builds chop and stirs up dirty water on shores facing north/east; bait and discoloured water both push toward the sheltered side. Watch for wind-against-tide chop on the run-out tide. Calmer, clearer water sits on the southern side of any point, island, breakwall or headland — pelagics often follow bait pushed there, while bottom feeders like snapper and sweetlip tuck into structure out of the chop.</div>
+          </div>
+        </details>
+
+        <details class="species-sub-toggle">
+          <summary>East</summary>
+          <div class="commentary">
+            <div class="kpi-item">Full-fetch chop pushes straight onto east-facing shores, with a tight dirty-water band close in and cleaner water further out. The western/lee side of any point, island or inlet mouth stays sheltered. Snapper and bream often sit tight in the wash; flathead and tailor patrol the clean/dirty edge.</div>
+          </div>
+        </details>
+
+        <details class="species-sub-toggle">
+          <summary>South-East / South</summary>
+          <div class="commentary">
+            <div class="kpi-item">Pushes river and creek discolouration onto north-facing shores, with steep chop across open water. Northern and western banks, estuary mouths and mangrove edges stay calmer. Flathead, whiting and bream can fire in the murk; snapper and sweetlip bite best early, before the chop builds on exposed banks.</div>
+          </div>
+        </details>
+
+        <details class="species-sub-toggle">
+          <summary>West / South-West</summary>
+          <div class="commentary">
+            <div class="kpi-item">Offshore for anything facing east — flattens the water close to shore and drains shallow flats fast. Only west-facing banks see any real chop. Snapper, whiting and squid often sit slightly deeper (3–8m) off clear, calm shorelines; flathead funnel into creek and channel mouths as the flats empty out.</div>
+          </div>
+        </details>
+
+        <details class="species-sub-toggle">
+          <summary>North-West</summary>
+          <div class="commentary">
+            <div class="kpi-item">Gusty, warm, pre-frontal wind — flattens water on north-facing shores while building chop on south-facing ones, the reverse of a southerly. Flathead and bream sit on weed beds and gutters in the calm pockets; pelagics chase bait in the flat, sheltered water.</div>
+          </div>
+        </details>
+      </div>
+    </details>
+
     <!-- Structure guide (2026-09, Tod's call; renamed from "Estuary
          Structure Guide") -- condensed from Module 2 of the same "Estuary
          Excellence" guide, rewritten here in the app's own words.
@@ -3588,6 +3648,35 @@ function fogNote(weather, dayOffset) {
   return "Patchy fog's likely at dawn, so visibility may be reduced heading out early.";
 }
 
+/* Wind direction (2026-11, Tod's call: "wind direction impact on bait fish
+   and the dirty water line", checked against CSIRO sources) -- generalised,
+   place-name-free version of a 5-row direction table, since the app covers
+   40+ locations well outside Moreton Bay (Tod's call: "bramble bay for
+   example is irrelevant to tweed heads"). Each bucket is wind-vs-shore
+   physics only -- which compass-facing shore gets the chop/dirty water,
+   which stays sheltered -- so it holds regardless of location or coastline
+   type. The place-named original table lives only in the Wind direction
+   guide above, read voluntarily as reference; this is the live, per-card
+   version driven by that same day's actual forecast wind direction.
+   Bucket boundaries split 360° into 5 unequal arcs matching the table's
+   own groupings (N+NE together, SE+S together, W+SW together, E and NW
+   each alone) -- see WIND_DIRECTION_BUCKETS for the exact degree ranges. */
+const WIND_DIRECTION_BUCKETS = [
+  { label: "north-east", lo: 337.5, hi: 360, note: "Wind's out of the north-east — expect chop and discoloured water building on north/east-facing shores, with calmer, clearer water tucked on the sheltered side of any point or island." },
+  { label: "north-east", lo: 0, hi: 67.5, note: "Wind's out of the north-east — expect chop and discoloured water building on north/east-facing shores, with calmer, clearer water tucked on the sheltered side of any point or island." },
+  { label: "east", lo: 67.5, hi: 112.5, note: "Wind's out of the east — chop and dirty water push straight onto east-facing shores, with a cleaner band further out and shelter on the western side of any point or island." },
+  { label: "south-east", lo: 112.5, hi: 202.5, note: "Wind's out of the south-east — chop and discoloured water build on south/east-facing shores, with calmer water on the northern/western side." },
+  { label: "west", lo: 202.5, hi: 292.5, note: "Wind's out of the west — mostly offshore, flattening water close to east-facing shores; only west-facing banks see any chop." },
+  { label: "north-west", lo: 292.5, hi: 337.5, note: "Wind's out of the north-west — flattens north-facing water while building chop on south-facing shores, the reverse of a southerly." }
+];
+function windDirectionNote(weather, dayOffset) {
+  const deg = weather?.daily?.wind_direction_10m_dominant?.[dayOffset];
+  if (deg == null) return null;
+  const d = ((deg % 360) + 360) % 360;
+  const bucket = WIND_DIRECTION_BUCKETS.find(b => d >= b.lo && d < b.hi);
+  return bucket ? bucket.note : null;
+}
+
 function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin, weather, marine, dayOffset, stormFlag, currentFlag) {
   const valid = checks.filter(c => c.valid && c.blurb);
   if (!valid.length) return "Not enough data to summarize today's conditions.";
@@ -3627,6 +3716,8 @@ function buildConditionsCommentary(checks, moonData, sunRiseMin, sunSetMin, weat
     if (uvText) text += ` ${uvText}`;
     const fogText = fogNote(weather, dayOffset);
     if (fogText) text += ` ${fogText}`;
+    const windDirText = windDirectionNote(weather, dayOffset);
+    if (windDirText) text += ` ${windDirText}`;
   }
 
   // Each window carries which one of dawn/dusk it actually lines up with (or
