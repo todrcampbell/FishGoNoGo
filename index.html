@@ -950,13 +950,6 @@
             <div class="kpi-item"><strong>GO</strong> ≥ 70 · <strong>MAYBE</strong> 40–69 · <strong>NO-GO</strong> &lt; 40</div>
           </div>
         </details>
-
-        <details class="species-sub-toggle">
-          <summary>Share</summary>
-          <div class="commentary">
-            <div class="kpi-item">Tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
-          </div>
-        </details>
       </div>
     </details>
 
@@ -1584,25 +1577,40 @@
       </div>
     </details>
 
-    <!-- Share the app (2026-11, Tod's call; renamed from "About the app" to
-         read as an action alongside the other Actions items) -- the social
-         share card image, reused here instead of writing separate copy.
-         about-card.png must sit at the repo ROOT like the other images, not
-         a subfolder -- see the manifest.json icon-path bug this already hit
-         once. Tap-to-copy (2026-11, Tod's call) -- see copyAboutCard():
-         copies the image itself to the clipboard so it can be pasted
-         straight into a social post, with a text fallback message for
-         browsers that don't support clipboard image writes yet. The
+    <!-- Share a card or the app (2026-11, Tod's call: "theres a share under
+         guides and a share under action... combine the two under actions")
+         -- was two separate things: a "Share" sub-item buried inside the
+         Conditions guide (just the GO/MAYBE/NO-GO-pill tip, one sentence,
+         no action of its own) and this "Share the app" item under Actions
+         (the social share card image). Merged into one Actions item, using
+         the existing .sub-label pattern (same one Bite times/Species times
+         and Commentary/Scoring checklist already use) to separate the two
+         topics inside one dropdown rather than inventing a new pattern.
+         Heading read "Share a score or the app" at first; changed to
+         "Share a card" (2026-11, Tod's call: "Should it be Share a card") --
+         accurate, since shareCard()/buildShareText() actually share a full
+         text summary (location, day, date, score, status, temp, tide), not
+         just a bare score number.
+         Originally "About the app" -> "Share the app" (2026-11, Tod's call,
+         to read as an action alongside the other Actions items) -- the
+         social share card image, reused here instead of writing separate
+         copy. about-card.png must sit at the repo ROOT like the other
+         images, not a subfolder -- see the manifest.json icon-path bug this
+         already hit once. Tap-to-copy (2026-11, Tod's call) -- see
+         copyAboutCard(): copies the image itself to the clipboard so it can
+         be pasted straight into a social post, with a text fallback message
+         for browsers that don't support clipboard image writes yet. The
          instruction line sits above the image, leading with "here's what to
          do" -- #aboutCardStatus below the image only holds transient copy
-         feedback. Moved to the very end of Actions, after "Set risk
+         feedback. Sits at the very end of Actions, after "Set risk
          tolerance and boat length" (2026-11, Tod's call: "move share the
-         app to the bottom of the action list") -- it used to sit right
-         after "Install or Improve the App"; same content/behaviour, only
-         its position in the list changed, and it's genuinely last again now. -->
+         app to the bottom of the action list"). -->
     <details class="species-toggle" id="aboutCardToggle" style="margin-top:22px;">
-      <summary>Share the app</summary>
+      <summary>Share a card or the app</summary>
       <div class="commentary">
+        <div class="kpi-item">Tap the GO / MAYBE / NO-GO pill on any card to share that day's score, date, temp and tide times.</div>
+
+        <div class="sub-label">Share the app</div>
         <div class="gauge-note" style="margin:0 0 8px 0;">Tap the image below to copy it, ready to paste into a text, group chat, or social post.</div>
         <img id="aboutCardImg" src="about-card.png" alt="FishGoNoGo — Go or NoGo? One quick read. Multiple days and locations. Scores wind, tide, swell, and storms. 43 preset locations from Noosa to Tweed. Fishing with mates? Share as text. Done." style="width:100%; border-radius:14px; display:block; cursor:pointer;">
         <div class="gauge-note" id="aboutCardStatus" style="margin:8px 0 0 0;"></div>
