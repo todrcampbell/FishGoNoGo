@@ -418,6 +418,50 @@
   }
   .species-toggle[open] summary::before, .bite-toggle[open] summary::before, .commentary-toggle[open] summary::before { transform: rotate(90deg); }
   .species-toggle .commentary, .bite-toggle .commentary, .commentary-toggle .commentary { margin: 8px 0 0 0; }
+  /* Risk & boat settings drawer (2026-11, Tod's call) -- same collapsed-
+     disclosure chevron/border treatment as .species-toggle/.bite-toggle/
+     .commentary-toggle above, kept as its own rule set since it sits at the
+     page level (under the chip row) rather than inside a forecast card, and
+     its body holds sliders rather than a .commentary text block. */
+  .settings-toggle { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .settings-toggle summary {
+    cursor: pointer; list-style: none; font-size: 13px; color: #e5e7eb;
+    display: flex; align-items: center; gap: 7px; padding: 2px 0;
+  }
+  .settings-toggle summary::-webkit-details-marker { display: none; }
+  .settings-toggle summary::before {
+    content: "▸"; display: inline-block; color: #9ca3af; font-size: 11px;
+    transition: transform 0.15s ease;
+  }
+  .settings-toggle[open] summary::before { transform: rotate(90deg); }
+  .settings-body { margin: 14px 2px 4px 2px; max-width: 420px; }
+  .slider-row { margin: 0 0 26px 0; }
+  .slider-row:last-child { margin-bottom: 4px; }
+  .slider-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .slider-label { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+  .slider-value { font-size: 12.5px; font-weight: 700; color: #6ee7b7; }
+  .slider-sub { font-size: 11.5px; color: #9ca3af; margin: 2px 0 12px 0; line-height: 1.4; }
+  input[type="range"] {
+    width: 100%; margin: 0; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 999px;
+    background: linear-gradient(to right, #34d399 0%, #34d399 var(--pct, 50%), #374151 var(--pct, 50%), #374151 100%);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #e5e7eb; border: 3px solid #34d399;
+    cursor: pointer; margin-top: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #e5e7eb; border: 3px solid #34d399; cursor: pointer;
+  }
+  .tick-row { display: flex; justify-content: space-between; margin-top: 7px; font-size: 10.5px; color: #6b7280; }
+  .tick-row span { flex: 1; text-align: center; }
+  .tick-row span:first-child { text-align: left; }
+  .tick-row span:last-child { text-align: right; }
+  .tick-row span.active { color: #6ee7b7; font-weight: 700; }
   /* Species guide nested per-species dropdowns (2026-09, Tod's call) --
      same collapsed-disclosure pattern as .species-toggle, but a smaller,
      lighter chevron and tighter spacing so each species reads as a level
@@ -508,8 +552,11 @@
   .kpi-summary h2 { margin-top: 0; font-size: 18px; margin-bottom: 10px; }
   /* .kpi-summary > .species-toggle:first-child's old margin/border reset
      (2026-09) is gone (2026-11, Tod's call) -- the panel's actual first
-     child is now the "Guides" .section-heading above, not a .species-toggle,
-     so that override no longer matched anything and was dead weight. */
+     child is the "Guides" .section-heading above, not a .species-toggle,
+     so that override no longer matches anything and is dead weight. The
+     "Set risk tolerance and boat length" drawer briefly lived here as the
+     first child too, then moved into Actions (Tod's call) -- see its
+     .settings-toggle markup under Actions, just above "Share the app". */
   .kpi-item { font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
   .info { margin-top: 10px; font-size: 0.85rem; color: #9ca3af; }
   .swipe-hint { font-size: 0.8rem; color: #9ca3af; margin: -4px 0 8px 0; }
@@ -774,7 +821,11 @@
     </label>
     <label class="pref-pill">
       <input type="checkbox" id="wavePrefToggle">
-      Spot has no chop
+      Sheltered
+    </label>
+    <label class="pref-pill">
+      <input type="checkbox" id="surfToggle">
+      Surf
     </label>
     <button type="button" class="action-pill" id="cacheAllLink">Save for offline</button>
     <button type="button" class="action-pill" id="seeTop10Chip">See Top 10</button>
@@ -819,14 +870,14 @@
         <details class="species-sub-toggle">
           <summary>Wind — 25 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Dawn and sunset wind speed are each scored, then averaged — calmer always scores higher here, since this check is about comfort and safety on the water, not the bite itself. Worth knowing: a bit of wind can actually help fishing — surface chop gives fish cover and confidence to feed, and windward shorelines collect bait ("find the bait, find the fish") — so a lower score here isn't necessarily a worse bite, just a rougher ride. Gusts are shown alongside for reference but aren't scored — the "safe until" note below can flag a gust spike separately.</div>
+            <div class="kpi-item">Dawn and sunset wind speed are each scored, then averaged — calmer always scores higher here, since this check is about comfort and safety on the water, not the bite itself. Worth knowing: a bit of wind can actually help fishing — surface chop gives fish cover and confidence to feed, and windward shorelines collect bait ("find the bait, find the fish") — so a lower score here isn't necessarily a worse bite, just a rougher ride. Gusts are shown alongside for reference but aren't scored — the "safe until" note below can flag a gust spike separately. The Risk tolerance slider (in "Set risk tolerance and boat length", under Actions) stretches or tightens these breakpoints; it defaults to "She'll be right", which leaves them exactly as described here.</div>
           </div>
         </details>
 
         <details class="species-sub-toggle">
           <summary>Wave Height — 20 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Comfort ceiling and "turn back" limit are both set from the boat's length (5m) using a common boating rule of thumb — turn back around 30% of boat length (1.5m), comfort at half that (0.75m). Full marks well below 0.75m, tapering steadily to 0 pts at 1.5m. Not relevant off the open bay — check "Spot has no chop" above the cards to ignore it.</div>
+            <div class="kpi-item">Comfort ceiling and "turn back" limit are both set from the Boat length slider (in "Set risk tolerance and boat length", under Actions) using a common boating rule of thumb — turn back around 30% of boat length, comfort at half that. Defaults to a 5m "Family boat" (turn back 1.5m, comfort 0.75m) if you never touch the slider. Full marks well below the comfort line, tapering steadily to 0 pts at the turn-back line — except at "Shore", which has no capsize risk and so no turn-back cutoff at all. The Risk tolerance slider stretches or tightens these same breakpoints. Not relevant off the open bay — check "Sheltered" above the cards to ignore it.</div>
           </div>
         </details>
 
@@ -854,7 +905,7 @@
         <details class="species-sub-toggle">
           <summary>Rain near dawn/dusk — 7 pts</summary>
           <div class="commentary">
-            <div class="kpi-item">Default: dry scores best (7 pts), rain scores worse. Check "Light rain helps bite" above the cards to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low. Neither setting captures the finer detail some anglers use — overcast without rain can extend low-light feeding, dirty water pushes fish to rely on their lateral line over sight, and the edges where rain-dirtied water meets clean can turn into ambush zones after the rain itself has passed — this check only ever reads dry-vs-rain at that moment, not what the rain left behind.</div>
+            <div class="kpi-item">Default: dry scores best (7 pts), rain scores worse. Check "Light rain helps bite" above the cards to switch to the other common angling view — light rain often helps the bite, only heavy rain scores low. Neither setting captures the finer detail some anglers use — overcast without rain can extend low-light feeding, dirty water pushes fish to rely on their lateral line over sight, and the edges where rain-dirtied water meets clean can turn into ambush zones after the rain itself has passed — this check only ever reads dry-vs-rain at that moment, not what the rain left behind. The Risk tolerance slider (in "Set risk tolerance and boat length", under Actions) stretches or tightens the mm thresholds either mode uses; it defaults to "She'll be right", which leaves them exactly as described here.</div>
           </div>
         </details>
 
@@ -1459,25 +1510,96 @@
       </div>
     </details>
 
+    <!-- Cache all locations moved out of Actions (2026-11, Tod's call) --
+         now lives as the third chip in .pref-pills, right under the cards
+         (see above #cardsGrid), same #cacheAllLink id and click listener
+         as before. -->
+
+    <!-- Risk & boat settings (2026-11, Tod's call) -- two sliders, collapsed
+         by default, same .species-toggle-family disclosure pattern and
+         margin-top:22px spacing as the other Actions items above. Lived
+         briefly at the top of this panel, above "Guides"; moved here, as
+         the last item under Actions, and relabelled from "Risk & boat
+         settings" to "Set risk tolerance and boat length" (2026-11, Tod's
+         call). "Sheltered" above the cards is about the SPOT (is it
+         structurally calm); these two sliders are about the ANGLER/BOAT
+         (how exposed you personally are) -- Tod's call to keep them
+         genuinely separate settings, not merged.
+         "Surf" above the cards is not a separate stored flag -- it's a
+         shortcut straight into Boat length = Shore, wired in the script
+         below alongside the sliders themselves. Both sliders default to the
+         exact index that reproduces today's hardcoded behaviour untouched
+         (She'll be right / Family boat) -- see RISK_TOLERANCE_DEFAULT_INDEX /
+         BOAT_LENGTH_DEFAULT_INDEX and waveCeilings()/riskMultiplier() above.
+
+         "Reset to standard scoring" button (2026-11, Tod's call: "add a
+         reset button to turn off all settings that change the formula from
+         its standard") -- resets every scoring-affecting preference back to
+         its default in one tap, not just these two sliders: also the
+         "Light rain helps bite" and "Sheltered" chips above the cards
+         (prefersLightRain/ignoreWaveHeight), since those change the formula
+         too. Deliberately does NOT touch the pinned-locations list, the
+         last-viewed location, or the cached Best Spots data -- none of
+         those affect scoring, so a "back to standard" action has no
+         business clearing them. See resetFormulaToStandard() below. -->
+    <details class="settings-toggle" style="margin-top:22px;">
+      <summary>Set risk tolerance and boat length</summary>
+      <div class="settings-body">
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-label">Risk tolerance</span>
+            <span class="slider-value" id="riskToleranceValue"></span>
+          </div>
+          <div class="slider-sub">How harsh wind, wave and rain are scored once conditions turn marginal. Tide and pressure don't change — those are about the fish, not you.</div>
+          <input type="range" min="0" max="4" step="1" id="riskToleranceSlider" aria-label="Risk tolerance">
+          <div class="tick-row" id="riskToleranceTicks">
+            <span>Little kids</span>
+            <span>Grandad</span>
+            <span>She'll be right</span>
+            <span>Harden up</span>
+            <span>Send it</span>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-label">Boat length</span>
+            <span class="slider-value" id="boatLengthValue"></span>
+          </div>
+          <div class="slider-sub" id="boatLengthSub"></div>
+          <input type="range" min="0" max="4" step="1" id="boatLengthSlider" aria-label="Boat length">
+          <div class="tick-row" id="boatLengthTicks">
+            <span>Shore</span>
+            <span>Kayak</span>
+            <span>Tinny</span>
+            <span>Family boat</span>
+            <span>7m+</span>
+          </div>
+        </div>
+
+        <button type="button" class="action-btn" id="resetFormulaBtn">Reset to standard scoring</button>
+        <div class="gauge-note" id="resetFormulaStatus" style="margin:6px 0 0 0;"></div>
+
+      </div>
+    </details>
+
     <!-- Share the app (2026-11, Tod's call; renamed from "About the app" to
-         read as an action alongside Plan a Crossing/Install or Improve the
-         App above, now that it's grouped under Actions) -- the social
+         read as an action alongside the other Actions items) -- the social
          share card image, reused here instead of writing separate copy.
-         Last in the list, collapsed by default, so it stays out of the way
-         for anyone who already knows what the app does (keeps the "no logo
-         in the UI" minimalism intact while it's closed). about-card.png
-         must sit at the repo ROOT like the other images, not a subfolder --
-         see the manifest.json icon-path bug this already hit once.
-         Tap-to-copy (2026-11, Tod's call) -- see copyAboutCard(): copies
-         the image itself to the clipboard so it can be pasted straight
-         into a social post, with a text fallback message for browsers that
-         don't support clipboard image writes yet. The instruction line
-         moved above the image (2026-11, Tod's call) -- now that the
-         dropdown is framed as an action rather than information, leading
-         with "here's what to do" reads better than finding out after
-         already looking at the image. #aboutCardStatus below the image now
-         starts empty and only holds transient copy feedback, since the
-         standing instruction lives in the new line above instead. -->
+         about-card.png must sit at the repo ROOT like the other images, not
+         a subfolder -- see the manifest.json icon-path bug this already hit
+         once. Tap-to-copy (2026-11, Tod's call) -- see copyAboutCard():
+         copies the image itself to the clipboard so it can be pasted
+         straight into a social post, with a text fallback message for
+         browsers that don't support clipboard image writes yet. The
+         instruction line sits above the image, leading with "here's what to
+         do" -- #aboutCardStatus below the image only holds transient copy
+         feedback. Moved to the very end of Actions, after "Set risk
+         tolerance and boat length" (2026-11, Tod's call: "move share the
+         app to the bottom of the action list") -- it used to sit right
+         after "Install or Improve the App"; same content/behaviour, only
+         its position in the list changed, and it's genuinely last again now. -->
     <details class="species-toggle" id="aboutCardToggle" style="margin-top:22px;">
       <summary>Share the app</summary>
       <div class="commentary">
@@ -1486,11 +1608,6 @@
         <div class="gauge-note" id="aboutCardStatus" style="margin:8px 0 0 0;"></div>
       </div>
     </details>
-
-    <!-- Cache all locations moved out of Actions (2026-11, Tod's call) --
-         now lives as the third chip in .pref-pills, right under the cards
-         (see above #cardsGrid), same #cacheAllLink id and click listener
-         as before. -->
   </div>
   </div>
 
@@ -2192,17 +2309,86 @@ const WIND_COMFORT_KMH = 20;
    uses wave height at ~30% of boat length as a turn-back threshold — see e.g.
    https://deckee.com/blog/what-is-a-good-swell-for-boating ("If a wave's height
    is 30 percent of the boat's length, it's a pretty good idea to turn back").
-   For this 5m boat that's 1.5m. Comfort is set at half that — meaningfully calmer
-   than the point you'd reconsider being out there at all, not sitting right at it.
+   Comfort is set at half that — meaningfully calmer than the point you'd
+   reconsider being out there at all, not sitting right at it.
    Previously the comfort ceiling was a flat 0.5m with no relationship to the boat's
    actual length or to any turn-back limit; real on-the-water conditions (0.5m dawn /
    0.4m dusk, which felt fine) scored a harsh "marginal" 6/20 under that number,
-   which is what prompted anchoring both to something less arbitrary. */
-const BOAT_LENGTH_M = 5;
-const WAVE_TURNBACK_M = BOAT_LENGTH_M * 0.30; // 1.5m — the "reconsider being out here" line
-const WAVE_COMFORT_M = WAVE_TURNBACK_M / 2;   // 0.75m — comfortably below that line, not at it
+   which is what prompted anchoring both to something less arbitrary.
+
+   2026-11 (Tod's call): boat length is now the "Boat length" slider in the
+   "Risk & boat settings" drawer, not a fixed 5m — see BOAT_LENGTH_KEY/
+   BOAT_LENGTH_OPTIONS and waveCeilings() below. The slider defaults to index 3
+   ("Family boat", 5m), the exact value this used to be hardcoded to, so a user
+   who never opens the drawer sees these numbers completely unchanged. */
 const GUST_COMFORT_KMH = 30; // gusts run naturally higher than sustained wind — a judgment-call default, adjustable
 const RAIN_COMFORT_MM = 1;
+
+const BOAT_LENGTH_KEY = "fishGoNoGo.boatLength";
+const BOAT_LENGTH_OPTIONS = [
+  { label: "Shore",       m: 0 },
+  { label: "Kayak",       m: 2 },
+  { label: "Tinny",       m: 3.5 },
+  { label: "Family boat", m: 5 },
+  { label: "7m+",         m: 7 }
+];
+const BOAT_LENGTH_DEFAULT_INDEX = 3; // "Family boat", 5m — matches the old hardcoded BOAT_LENGTH_M
+function getBoatLengthIndex() {
+  try {
+    const raw = parseInt(localStorage.getItem(BOAT_LENGTH_KEY), 10);
+    if (Number.isInteger(raw) && raw >= 0 && raw <= 4) return raw;
+  } catch (e) { /* ignore */ }
+  return BOAT_LENGTH_DEFAULT_INDEX;
+}
+
+/* Returns the boat-length-derived {turnback, comfort} pair that
+   computeSafeUntil/renderComfortSparkline/getConditionsAtHour all key off —
+   the same two numbers WAVE_TURNBACK_M/WAVE_COMFORT_M used to be, just
+   recomputed from the slider instead of frozen at a 5m boat.
+
+   "Shore" (0m) is a deliberate special case, not a mathematical extrapolation
+   of the 30% rule down to zero — that would turn WAVE_COMFORT_M into 0 too and
+   score every wave height as a flat zero, which is a broken check, not a
+   cautious one. A shore angler isn't at risk of capsizing, so there's no
+   turn-back line to hit zero at: turnback comes back Infinity (wavePoints()
+   below reads that to skip its hard safety tiers entirely for Shore), and
+   comfort reuses Kayak's own derived comfort distance as a reasonable "still
+   pleasant underfoot" reference rather than zero. Risk tolerance is applied
+   separately, only at the point of scoring (see wavePoints()) — these two
+   numbers stay purely about the boat/location, not how cautious the angler is. */
+function waveCeilings() {
+  const boatM = BOAT_LENGTH_OPTIONS[getBoatLengthIndex()].m;
+  if (boatM === 0) {
+    const kayakM = BOAT_LENGTH_OPTIONS[1].m; // 2m
+    return { turnback: Infinity, comfort: (kayakM * 0.30) / 2 };
+  }
+  const turnback = boatM * 0.30;
+  return { turnback, comfort: turnback / 2 };
+}
+
+/* Risk tolerance (2026-11, Tod's call) -- the "Risk tolerance" slider in the
+   same "Risk & boat settings" drawer. Rescales the breakpoints inside
+   windPoints/wavePoints/the rain-scoring functions only — tide and pressure
+   are deliberately untouched (Tod: "tide no change; wind changes; wave
+   changes; pressure no change; rain changes" — tide/pressure are facts about
+   fish behaviour, not something the angler personally feels, whereas
+   wind/wave/rain are exposure the angler is actually out in).
+   Index 2 ("She'll be right") is exactly 1.0 — a no-op multiplier — so a user
+   who never touches this slider scores identically to before it existed.
+   Below 1 makes a check turn harsh sooner (more cautious); above 1 lets it
+   stay forgiving for longer (more risk-tolerant). */
+const RISK_TOLERANCE_KEY = "fishGoNoGo.riskTolerance";
+const RISK_TOLERANCE_LABELS = ["Little kids", "Grandad", "She'll be right", "Harden up", "Send it"];
+const RISK_TOLERANCE_MULTIPLIERS = [0.6, 0.8, 1.0, 1.25, 1.55];
+const RISK_TOLERANCE_DEFAULT_INDEX = 2; // "She'll be right" — multiplier 1.0, a no-op
+function getRiskToleranceIndex() {
+  try {
+    const raw = parseInt(localStorage.getItem(RISK_TOLERANCE_KEY), 10);
+    if (Number.isInteger(raw) && raw >= 0 && raw <= 4) return raw;
+  } catch (e) { /* ignore */ }
+  return RISK_TOLERANCE_DEFAULT_INDEX;
+}
+function riskMultiplier() { return RISK_TOLERANCE_MULTIPLIERS[getRiskToleranceIndex()]; }
 
 /* Wind-against-current (2026-11, Tod's call: "it's only important to bay
    locations and crossing" -- restricted to the 11 open-water presets
@@ -2291,7 +2477,7 @@ function computeSafeUntil(series) {
   let windCrossHour = null, waveCrossHour = null, gustCrossHour = null, rainCrossHour = null;
   for (const pt of series) {
     if (windCrossHour == null && pt.wind > WIND_COMFORT_KMH) windCrossHour = pt.hour;
-    if (waveCrossHour == null && pt.wave != null && pt.wave > WAVE_COMFORT_M) waveCrossHour = pt.hour;
+    if (waveCrossHour == null && pt.wave != null && pt.wave > waveCeilings().comfort) waveCrossHour = pt.hour;
     if (gustCrossHour == null && pt.gust != null && pt.gust > GUST_COMFORT_KMH) gustCrossHour = pt.hour;
     if (rainCrossHour == null && pt.rain != null && pt.rain >= RAIN_COMFORT_MM) rainCrossHour = pt.hour;
   }
@@ -2334,7 +2520,7 @@ function renderComfortSparkline(series, metric) {
   const width = 280, height = 54, pad = 4;
   const fieldFor = { wave: "wave", gust: "gust", wind: "wind", rain: "rain" };
   const field = fieldFor[metric] || "wind";
-  const comfortLine = metric === "wave" ? WAVE_COMFORT_M : (metric === "gust" ? GUST_COMFORT_KMH : (metric === "rain" ? RAIN_COMFORT_MM : WIND_COMFORT_KMH));
+  const comfortLine = metric === "wave" ? waveCeilings().comfort : (metric === "gust" ? GUST_COMFORT_KMH : (metric === "rain" ? RAIN_COMFORT_MM : WIND_COMFORT_KMH));
   const values = series.map(p => p[field]).filter(v => v != null);
   if (!values.length) return "";
   const maxV = Math.max(comfortLine, ...values) * 1.15;
@@ -2671,11 +2857,14 @@ function ignoreWaveHeight() {
 
 /* Default mode: dry scores best, any rain scores worse. Matches "I don't like
    fishing in the rain" as a personal preference, regardless of what folklore says
-   about the bite. */
+   about the bite. "Dry" thresholds scaled by riskMultiplier() (2026-11) -- at the
+   default "She'll be right" tolerance that's ×1, so these read exactly as 1mm/2mm,
+   unchanged from before the Risk tolerance slider existed. */
 function rainScoreAvoid(rainDawn, rainDusk, dailyTotal) {
-  const dawnDry = (rainDawn ?? 0) < 1;
-  const duskDry = (rainDusk ?? 0) < 1;
-  const middayRain = dailyTotal != null && dailyTotal >= 2 && dawnDry && duskDry;
+  const rm = riskMultiplier();
+  const dawnDry = (rainDawn ?? 0) < 1 * rm;
+  const duskDry = (rainDusk ?? 0) < 1 * rm;
+  const middayRain = dailyTotal != null && dailyTotal >= 2 * rm && dawnDry && duskDry;
   const middayNote = middayRain ? ` · ~${dailyTotal.toFixed(0)}mm expected mid-day` : "";
 
   if (dawnDry && duskDry) {
@@ -2697,9 +2886,10 @@ function rainScoreAvoid(rainDawn, rainDusk, dailyTotal) {
    the default stays "avoid rain" above. */
 function rainTierFolklore(mm) {
   if (mm == null) return null;
-  if (mm < 1) return { score: 6, tier: "dry" };
-  if (mm < 4) return { score: 7, tier: "light rain — can help the bite" };
-  if (mm < 10) return { score: 3, tier: "moderate rain" };
+  const rm = riskMultiplier(); // same ×1-at-default scaling as rainScoreAvoid above
+  if (mm < 1 * rm) return { score: 6, tier: "dry" };
+  if (mm < 4 * rm) return { score: 7, tier: "light rain — can help the bite" };
+  if (mm < 10 * rm) return { score: 3, tier: "moderate rain" };
   return { score: 0, tier: "heavy rain" };
 }
 function rainScoreFolklore(rainDawn, rainDusk) {
@@ -2748,27 +2938,49 @@ function dayLooksRainy(weather, dayOffset) {
   return false;
 }
 
-/* Wind: tiered 0-25, applied separately to dawn and dusk then averaged */
+/* Wind: tiered 0-25, applied separately to dawn and dusk then averaged.
+   Breakpoints scaled by riskMultiplier() (2026-11) -- at the default "She'll
+   be right" tolerance that's ×1, so these read exactly as they did before
+   the Risk tolerance slider existed (8/12/16/20/25 unchanged). */
 function windPoints(speed) {
-  if (speed < 8)  return { score: 25, tier: "ideal" };
-  if (speed < 12) return { score: 20, tier: "ideal" };
-  if (speed < 16) return { score: 14, tier: "moderate" };
-  if (speed < 20) return { score: 8,  tier: "moderate" };
-  if (speed < 25) return { score: 3,  tier: "strong" };
+  const rm = riskMultiplier();
+  if (speed < 8 * rm)  return { score: 25, tier: "ideal" };
+  if (speed < 12 * rm) return { score: 20, tier: "ideal" };
+  if (speed < 16 * rm) return { score: 14, tier: "moderate" };
+  if (speed < 20 * rm) return { score: 8,  tier: "moderate" };
+  if (speed < 25 * rm) return { score: 3,  tier: "strong" };
   return { score: 0, tier: "strong" };
 }
 
-/* Wave height tiers, stepped between the two anchors above (WAVE_COMFORT_M and
-   WAVE_TURNBACK_M) rather than hardcoded numbers — so if the boat ever changes and
-   BOAT_LENGTH_M gets updated, these move with it instead of drifting out of sync.
-   Full marks well below comfort, tapering steadily rather than one steep cliff right
-   at the ceiling, down to zero at the turn-back line. */
+/* Wave height tiers, stepped between the two boat-derived anchors from
+   waveCeilings() (comfort and turnback) rather than hardcoded numbers, then
+   further scaled by riskMultiplier() -- at the defaults (Family boat boat
+   length, She'll be right risk tolerance) comfort/turnback come out to the
+   exact 0.75m/1.5m this used to be hardcoded to, so these breakpoints are
+   unchanged unless a slider has actually been moved. Full marks well below
+   comfort, tapering steadily rather than one steep cliff right at the
+   ceiling, down to zero at the turn-back line.
+
+   "Shore" (turnback === Infinity, see waveCeilings()) skips the hard
+   safety tiers entirely -- Tod's call: a shore angler isn't at risk of
+   capsizing, so wave height should keep easing the score down smoothly
+   past comfort instead of hitting a zero-score "rough" tier the way it
+   does for a boat. Rock-fishing wash-off risk is a separate, unrelated
+   concern Tod explicitly parked for a future slider, not this one. */
 function wavePoints(h) {
-  if (h < WAVE_COMFORT_M * 0.4)   return { score: 20, tier: "calm" };
-  if (h < WAVE_COMFORT_M * 0.67)  return { score: 18, tier: "light" };
-  if (h < WAVE_COMFORT_M)         return { score: 14, tier: "comfortable" };
-  if (h < WAVE_TURNBACK_M * 0.67) return { score: 8,  tier: "marginal" };
-  if (h < WAVE_TURNBACK_M)        return { score: 3,  tier: "choppy" };
+  const { turnback, comfort } = waveCeilings();
+  const rm = riskMultiplier();
+  const c = comfort * rm;
+  if (h < c * 0.4)  return { score: 20, tier: "calm" };
+  if (h < c * 0.67) return { score: 18, tier: "light" };
+  if (h < c)        return { score: 14, tier: "comfortable" };
+  if (turnback === Infinity) {
+    if (h < c * 2) return { score: 8, tier: "marginal" };
+    return { score: 4, tier: "choppy" }; // never 0 -- no safety cutoff from shore
+  }
+  const t = turnback * rm;
+  if (h < t * 0.67) return { score: 8, tier: "marginal" };
+  if (h < t)        return { score: 3, tier: "choppy" };
   return { score: 0, tier: "rough" };
 }
 
@@ -3768,6 +3980,67 @@ async function load() {
   document.getElementById("wavePrefToggle").checked = ignoreWaveHeight();
 })();
 
+/* Risk & boat settings drawer (2026-11, Tod's call) -- purely visual
+   updates (label text, active tick, the --pct CSS var that drives the
+   slider's filled-track gradient). Called on init and on every "input"
+   event while dragging, so the drawer gives live feedback without
+   re-fetching weather on every tick; the "change" listeners below (fired
+   once, on release) are what persist to localStorage and call load() to
+   actually re-score. */
+function renderRiskToleranceUI(idx) {
+  document.getElementById("riskToleranceSlider").style.setProperty("--pct", `${idx * 25}%`);
+  document.getElementById("riskToleranceValue").textContent = RISK_TOLERANCE_LABELS[idx];
+  document.querySelectorAll("#riskToleranceTicks span").forEach((el, i) => el.classList.toggle("active", i === idx));
+}
+function renderBoatLengthUI(idx) {
+  document.getElementById("boatLengthSlider").style.setProperty("--pct", `${idx * 25}%`);
+  const opt = BOAT_LENGTH_OPTIONS[idx];
+  document.getElementById("boatLengthValue").textContent = idx === 0 ? opt.label : `${opt.m} m — ${opt.label}`;
+  document.querySelectorAll("#boatLengthTicks span").forEach((el, i) => el.classList.toggle("active", i === idx));
+  document.getElementById("boatLengthSub").textContent = idx === 0
+    ? "No wave-based safety cutoff applies. (Rock-fishing wash-off risk is a separate thing — not covered by this slider.)"
+    : "Sets the wave-height ceiling for a safe trip. Shore selects out of it entirely — wave height stays comfort-only, no safety cutoff.";
+  // Surf chip (2026-11) isn't a separate stored flag -- it's just a shortcut
+  // into Boat length = Shore, so its checked state always mirrors the
+  // slider rather than being tracked independently.
+  document.getElementById("surfToggle").checked = (idx === 0);
+}
+
+(function initRiskBoatSettings() {
+  const riskIdx = getRiskToleranceIndex();
+  const boatIdx = getBoatLengthIndex();
+  document.getElementById("riskToleranceSlider").value = riskIdx;
+  document.getElementById("boatLengthSlider").value = boatIdx;
+  renderRiskToleranceUI(riskIdx);
+  renderBoatLengthUI(boatIdx);
+})();
+
+/* "Reset to standard scoring" (2026-11, Tod's call) -- puts every
+   scoring-affecting preference back to its default in one tap: both
+   sliders (back to She'll be right / Family boat) AND the two pref-pill
+   checkboxes above the cards (Light rain helps bite / Sheltered), since
+   those change the formula too, not just the sliders in this drawer.
+   Deliberately leaves the pinned-locations list, last-viewed location and
+   cached Best Spots data alone -- none of those affect scoring. */
+function resetFormulaToStandard() {
+  try {
+    localStorage.setItem(RISK_TOLERANCE_KEY, String(RISK_TOLERANCE_DEFAULT_INDEX));
+    localStorage.setItem(BOAT_LENGTH_KEY, String(BOAT_LENGTH_DEFAULT_INDEX));
+    localStorage.setItem(RAIN_PREF_KEY, "0");
+    localStorage.setItem(WAVE_PREF_KEY, "0");
+  } catch (err) { /* ignore */ }
+
+  document.getElementById("riskToleranceSlider").value = RISK_TOLERANCE_DEFAULT_INDEX;
+  document.getElementById("boatLengthSlider").value = BOAT_LENGTH_DEFAULT_INDEX;
+  renderRiskToleranceUI(RISK_TOLERANCE_DEFAULT_INDEX);
+  renderBoatLengthUI(BOAT_LENGTH_DEFAULT_INDEX);
+  document.getElementById("rainPrefToggle").checked = false;
+  document.getElementById("wavePrefToggle").checked = false;
+
+  document.getElementById("resetFormulaStatus").textContent = "Reset to standard scoring.";
+  load();
+}
+
 // updatePreferencesSummary() removed (2026-11, Tod's call) -- it used to
 // keep the collapsed Preferences dropdown's <summary> line honest about
 // which preferences were active. That dropdown is gone; the two toggles
@@ -3932,6 +4205,33 @@ document.getElementById("wavePrefToggle").addEventListener("change", (e) => {
   try { localStorage.setItem(WAVE_PREF_KEY, e.target.checked ? "1" : "0"); } catch (err) { /* ignore */ }
   load();
 });
+document.getElementById("riskToleranceSlider").addEventListener("input", (e) => {
+  renderRiskToleranceUI(parseInt(e.target.value, 10));
+});
+document.getElementById("riskToleranceSlider").addEventListener("change", (e) => {
+  const idx = parseInt(e.target.value, 10);
+  try { localStorage.setItem(RISK_TOLERANCE_KEY, String(idx)); } catch (err) { /* ignore */ }
+  load();
+});
+document.getElementById("boatLengthSlider").addEventListener("input", (e) => {
+  renderBoatLengthUI(parseInt(e.target.value, 10));
+});
+document.getElementById("boatLengthSlider").addEventListener("change", (e) => {
+  const idx = parseInt(e.target.value, 10);
+  try { localStorage.setItem(BOAT_LENGTH_KEY, String(idx)); } catch (err) { /* ignore */ }
+  load();
+});
+document.getElementById("surfToggle").addEventListener("change", (e) => {
+  // Not a separate stored flag -- directly sets Boat length to Shore (index
+  // 0) when ticked, or back to the default Family boat (index 3) when
+  // unticked, and persists/re-scores exactly like moving the slider itself.
+  const idx = e.target.checked ? 0 : BOAT_LENGTH_DEFAULT_INDEX;
+  document.getElementById("boatLengthSlider").value = idx;
+  renderBoatLengthUI(idx);
+  try { localStorage.setItem(BOAT_LENGTH_KEY, String(idx)); } catch (err) { /* ignore */ }
+  load();
+});
+document.getElementById("resetFormulaBtn").addEventListener("click", resetFormulaToStandard);
 
 /* ===== Crossing mode: a separate screen, doesn't touch the main dashboard's
    logic or state. Checks today's conditions at both the departure and
@@ -4088,7 +4388,7 @@ function getConditionsAtHour(series, hour) {
   const causes = [];
   if (pt.wind > WIND_COMFORT_KMH) causes.push("wind");
   if (pt.gust != null && pt.gust > GUST_COMFORT_KMH) causes.push("gusts");
-  if (pt.wave != null && pt.wave > WAVE_COMFORT_M) causes.push("waves");
+  if (pt.wave != null && pt.wave > waveCeilings().comfort) causes.push("waves");
   // Wind-against-current (2026-11, "implement") -- kept separate from the
   // comfortable/causes pass-fail above, same split as the main dashboard's
   // card-level banner vs its GO/MAYBE/NO-GO score: this is a "watch for
